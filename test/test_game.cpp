@@ -18,24 +18,52 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+#include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
 
-TEST_CASE("Event::nextEvent") {
+TEST_CASE("Actions::getAction", "[unit]") {
+  using namespace libgtfoklahoma;
+  const char *action_json = R"(
+  [
+    {
+      "display_name": "display_name_0",
+      "id": 0
+    },
+    {
+      "display_name": "display_name_1",
+      "id": 1
+    }
+  ]
+  )";
+
+  SECTION("Get action by id works") {
+   Actions actions(action_json);
+   ActionModel model_0 = actions.getAction(0);
+   ActionModel model_1 = actions.getAction(1);
+   REQUIRE(model_0.display_name == "display_name_0");
+   REQUIRE(model_1.display_name == "display_name_1");
+  }
+}
+
+TEST_CASE("Event::nextEvent", "[unit]") {
   using namespace libgtfoklahoma;
   const char *event_json = R"(
   [
     {
+      "actions": [0],
       "description": "description_0",
       "display_name": "display_name_0",
       "mile": 0
     },
     {
+      "actions": [1],
       "description": "description_1",
       "display_name": "display_name_1",
       "mile": 1
     },
     {
+      "actions": [2],
       "description": "description_2",
       "display_name": "display_name_2",
       "mile": 4
@@ -75,6 +103,15 @@ TEST_CASE("Event::nextEvent") {
     REQUIRE(model.description == "description_1");
     REQUIRE(model.display_name == "display_name_1");
     REQUIRE(model.mile == 1);
+  }
+
+  SECTION("Action ids are correct") {
+    Events events(0, event_json);
+    int i = 0; // index should match action id
+    while (events.hasNextEvent()) {
+      auto event = events.nextEvent();
+      REQUIRE(event.action_ids[0] == i++);
+    }
   }
 }
 

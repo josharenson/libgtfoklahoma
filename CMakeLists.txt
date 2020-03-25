@@ -17,6 +17,7 @@ set(LIBGTFOKLAHOMA_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 
 # libgtfoklahoma
 set(LIBGTFOKLAHOMA_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/actions.cpp
     ${CMAKE_SOURCE_DIR}/src/engine.cpp
     ${CMAKE_SOURCE_DIR}/src/events.cpp
     ${CMAKE_SOURCE_DIR}/src/game.cpp)

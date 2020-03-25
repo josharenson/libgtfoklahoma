@@ -18,7 +18,6 @@
 #include <libgtfoklahoma/events.hpp>
 
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 
 using namespace libgtfoklahoma;
 using namespace rapidjson;
@@ -30,6 +29,7 @@ Events::Events(const int32_t initialMile, const char *eventJson) {
     abort();
   }
 
+  // Determine next event
   for (int i = 0; i < m_eventDocument.GetArray().Size(); i++) {
     auto array = m_eventDocument.GetArray();
     if (array[i].IsObject() && array[i].GetObject()["mile"].IsInt() &&
@@ -40,9 +40,19 @@ Events::Events(const int32_t initialMile, const char *eventJson) {
   }
 }
 
+bool Events::hasNextEvent() const {
+  return m_eventDocument.GetArray().Size() > m_nextEventIdx;
+}
+
 EventModel Events::nextEvent() {
   EventModel model = {};
   auto array = m_eventDocument.GetArray();
+
+  auto eventIsValid = [](const rapidjson::Value &event) {
+    return event["actions"].IsArray() && event["description"].IsString() &&
+           event["display_name"].IsString() && event["mile"].IsInt();// &&
+           // event["actions"].GetArray()[0].IsInt();
+  };
 
   // Out of bounds, return empty model
   if (array.Size() <= m_nextEventIdx || !array[m_nextEventIdx].IsObject()) {
@@ -50,12 +60,15 @@ EventModel Events::nextEvent() {
     return model;
   }
 
-  auto event = array[m_nextEventIdx].GetObject();
-  if (event["description"].IsString() && event["display_name"].IsString() &&
-      event["mile"].IsInt()) {
+  const auto &event = array[m_nextEventIdx];
+  if (eventIsValid(event)) {
+    for (auto &action : event["actions"].GetArray()) {
+      model.action_ids.push_back(action.GetInt());
+    }
     model.description = event["description"].GetString();
     model.display_name = event["display_name"].GetString();
     model.mile = event["mile"].GetInt();
+
     m_nextEventIdx++;
     return model;
   } else {

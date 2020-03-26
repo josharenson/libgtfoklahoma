@@ -49,5 +49,12 @@ ActionModel Actions::getAction(int32_t id) const {
   if (m_actions.count(id)) {
     return m_actions.at(id);
   }
+
+  spdlog::warn("Requested action id {} that does not exist.", id);
   return {};
+}
+
+void Actions::performAction(int32_t id) {
+  ActionModel model = getAction(id);
+  spdlog::debug("Performing action {}", id);
 }

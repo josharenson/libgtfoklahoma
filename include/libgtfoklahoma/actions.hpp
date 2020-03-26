@@ -31,7 +31,8 @@ struct ActionModel {
 class Actions {
 public:
   explicit Actions(const char *actionJson=kActionJson);
-  ActionModel getAction(int32_t id) const;
+  [[nodiscard]] ActionModel getAction(int32_t id) const;
+  void performAction(int32_t id);
 
 private:
   rapidjson::Document m_actionsDocument;

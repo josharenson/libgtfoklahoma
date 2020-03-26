@@ -32,8 +32,11 @@ int main(int argc, char *argv[]) {
   spdlog::set_level(spdlog::level::debug);
 
   libgtfoklahoma::Game game("");
-  libgtfoklahoma::Engine engine(game);
+  auto engine = std::make_shared<libgtfoklahoma::Engine>(game);
   auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>();
-  engine.registerEventObserver(std::move(eventObserver));
-  engine.run();
+  engine->registerEventObserver(std::move(eventObserver));
+  engine->start();
+
+  // UI thread?
+  for (;;) {}
 }

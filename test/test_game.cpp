@@ -115,6 +115,16 @@ TEST_CASE("Event::nextEvent", "[unit]") {
   }
 }
 
+TEST_CASE("EventModel", "[unit]") {
+  libgtfoklahoma::EventModel model;
+  model.action_ids = {1, 2};
+
+  SECTION("EventModel::chooseAction validates") {
+    REQUIRE(model.chooseAction(1));
+    REQUIRE_FALSE(model.chooseAction(3));
+  }
+}
+
 TEST_CASE("Game::bump*", "[unit]") {
   libgtfoklahoma::Game game("");
 

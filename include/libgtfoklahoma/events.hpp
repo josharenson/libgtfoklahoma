@@ -18,9 +18,11 @@
 #pragma once
 
 #include <cstdint>
+#include <future>
 #include <string>
 #include <vector>
 
+#include <spdlog/spdlog.h>
 #include <rapidjson/document.h>
 
 namespace libgtfoklahoma {
@@ -29,13 +31,33 @@ struct EventModel {
   std::string description;
   std::string display_name;
   int32_t mile {-1};
+
+  bool chooseAction(int32_t id) {
+    if (actionIdIsValid(id)) {
+      m_chosenAction.set_value(id);
+      return true;
+    } else {
+      spdlog::error("{} is an invalid action id for this event!", id);
+      return false;
+    }
+  }
+
+  std::future<int32_t> chosenAction() { return m_chosenAction.get_future(); }
+
+private:
+  bool actionIdIsValid(int32_t id) {
+    auto it = std::find(action_ids.begin(), action_ids.end(), id);
+    return it != action_ids.end();
+  }
+private:
+  std::promise<int32_t> m_chosenAction;
 };
 
 class Events {
 public:
   explicit Events(int32_t initialMile, const char *eventJson=kEventJson);
 
-  bool hasNextEvent() const;
+  [[nodiscard]] bool hasNextEvent() const;
   EventModel nextEvent();
 
 private:

@@ -17,23 +17,33 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
+#include <thread>
 #include <vector>
 
-#include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
 
 namespace libgtfoklahoma {
 
+class IEventObserver;
 class Engine {
 public:
   explicit Engine(Game game);
+  ~Engine();
 
   void registerEventObserver(std::unique_ptr<IEventObserver> observer);
-  void run();
+  void start();
+  void stop();
 
 private:
+  void mainLoop();
+
+private:
+  std::thread m_eventLoopThread;
+  std::atomic<bool> m_running;
+
   Events m_events;
   EventModel m_nextEvent;
   Game m_game;

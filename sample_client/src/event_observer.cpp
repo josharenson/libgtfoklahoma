@@ -18,23 +18,38 @@
 // Library includes
 #include <libgtfoklahoma/events.hpp>
 
+// System includes
+#include <iostream>
+
 // 3P includes
 #include <spdlog/spdlog.h>
 
 // Local includes
 #include <event_observer.hpp>
+#include <utility>
 
 using namespace gtfoklahoma;
 using namespace libgtfoklahoma;
 
-void EventObserver::onHourChanged(int32_t hour) const {
+void EventObserver::onHourChanged(int32_t hour) {
   spdlog::debug("Current hour is " + std::to_string(hour));
 }
 
-void EventObserver::onMileChanged(int32_t mile) const {
+void EventObserver::onMileChanged(int32_t mile) {
 
 }
 
-void EventObserver::onEvent(const EventModel &model) const {
+void EventObserver::onEvent(EventModel &model) {
   spdlog::debug("POI Encountered-> " + model.display_name);
+  int32_t result;
+  while (true) {
+    std::cout << "Enter a number-> ";
+    std::cin >> result;
+    if (model.chooseAction(result)) {
+      break;
+    } else {
+      std::cout << "\nInvalid choice!" << std::endl;
+    }
+  }
 }
+

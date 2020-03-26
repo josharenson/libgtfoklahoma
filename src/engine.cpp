@@ -15,32 +15,49 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libgtfoklahoma/constants.hpp>
 #include <libgtfoklahoma/engine.hpp>
 
-#include <thread>
+// System includes
+#include <chrono>
 
+// 3P Includes
+#include <spdlog/spdlog.h>
+
+// Local includes
+#include <libgtfoklahoma/constants.hpp>
+#include <libgtfoklahoma/event_observer.hpp>
 
 using namespace libgtfoklahoma;
 
 Engine::Engine(Game game)
-: m_events(Events(game.mile()))
+: m_running(false)
+, m_events(Events(game.mile()))
 , m_nextEvent(m_events.nextEvent())
 , m_game(std::move(game)) {}
+
+Engine::~Engine() { stop(); }
 
 void Engine::registerEventObserver(std::unique_ptr<IEventObserver> observer) {
   m_eventObservers.emplace_back(std::move(observer));
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-void Engine::run() {
+void Engine::start() {
+  spdlog::debug("Starting Engine's event loop");
+  m_running = true;
+  m_eventLoopThread = std::thread(&Engine::mainLoop, this);
+}
+
+void Engine::stop() {
+  spdlog::debug("Stopping Engine's event loop");
+  m_running = false;
+  if (m_eventLoopThread.joinable()) { m_eventLoopThread.join(); }
+}
+
+void Engine::mainLoop() {
   int32_t ticksUntilNextMile = m_game.ticksUntiNextMile();
 
-  for (;;) {
+  while (m_running) {
     std::this_thread::sleep_for(kTickDelayMs);
-    m_game.bumpTick();
-    ticksUntilNextMile--;
 
     if (!(m_game.tick() % kTicksPerGameHour)) {
       auto new_hour = m_game.bumpHour();
@@ -52,6 +69,7 @@ void Engine::run() {
     if (m_nextEvent.mile == m_game.mile()) {
       for (const auto &observer : m_eventObservers) {
         observer->onEvent(m_nextEvent);
+        auto actionIdToExecute = m_nextEvent.chosenAction().get();
       }
       m_nextEvent = m_events.nextEvent();
     }
@@ -63,6 +81,9 @@ void Engine::run() {
         observer->onMileChanged(new_mile);
       }
     }
+
+    m_game.bumpTick();
+    ticksUntilNextMile--;
   }
+
 }
-#pragma clang diagnostic pop

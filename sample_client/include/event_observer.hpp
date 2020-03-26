@@ -27,11 +27,10 @@ namespace gtfoklahoma {
 class EventObserver : public libgtfoklahoma::IEventObserver {
 public:
 
-  EventObserver() = default;
   ~EventObserver() override = default;
 
-  void onHourChanged(int32_t hour) const override;
-  void onMileChanged(int32_t mile) const override;
-  void onEvent(const libgtfoklahoma::EventModel &model) const override;
+  void onHourChanged(int32_t hour) override;
+  void onMileChanged(int32_t mile) override;
+  void onEvent(libgtfoklahoma::EventModel &model) override;
 };
 } // namespace gtfoklahoma

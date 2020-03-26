@@ -18,28 +18,32 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <utility>
 
 namespace libgtfoklahoma {
 
+class Engine;
 class EventModel;
 class IEventObserver {
 public:
+
   virtual ~IEventObserver() = default;
 
   /*
    * @param hour The hour of the day 0 - 23.
    */
-  virtual void onHourChanged(int32_t hour) const = 0;
+  virtual void onHourChanged(int32_t hour) = 0;
 
   /*
    * @param mile The current mile of the journey. Wouldn't be very Texan to use
    * kilometers...
    */
-  virtual void onMileChanged(int32_t mile) const = 0;
+  virtual void onMileChanged(int32_t mile) = 0;
 
   /*
    * @param model A reference to the model describing the point of interest.
    */
-  virtual void onEvent(const EventModel &model) const = 0;
+  virtual void onEvent(EventModel &model) = 0;
 };
 }

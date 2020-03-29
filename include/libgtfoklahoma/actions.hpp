@@ -19,29 +19,41 @@
 
 #include <map>
 #include <string>
+#include <utility>
+#include <variant>
+#include <vector>
 
 #include <rapidjson/document.h>
+
+#include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/stats.hpp>
 
 namespace libgtfoklahoma {
 struct ActionModel {
   std::string display_name;
   int32_t id {-1};
+  StatModel stat_delta;
 };
 
 class Actions {
 public:
-  explicit Actions(const char *actionJson=kActionJson);
+  explicit Actions(Game &game, const char *actionJson=kActionJson);
   [[nodiscard]] ActionModel getAction(int32_t id) const;
   void performAction(int32_t id);
 
 private:
+  static std::vector<StatNameDeltaPair> parseStatModifiers(const rapidjson::GenericArray<true, rapidjson::Value>& statChangesArray);
+
+private:
+  Game &m_game;
   rapidjson::Document m_actionsDocument;
   std::map<int32_t, ActionModel> m_actions;
   inline static const char *kActionJson = R"JSON(
   [
     {
       "display_name": "GTFO",
-      "id": 0
+      "id": 0,
+      "stat_changes": [{}]
     }
   ]
   )JSON";

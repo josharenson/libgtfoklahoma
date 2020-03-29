@@ -18,31 +18,63 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
+
 #include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/rules.hpp>
+#include <libgtfoklahoma/stats.hpp>
 
 TEST_CASE("Actions::getAction", "[unit]") {
   using namespace libgtfoklahoma;
+  Game game("");
+
   const char *action_json = R"(
   [
     {
       "display_name": "display_name_0",
-      "id": 0
+      "id": 0,
+      "stat_changes": [{}]
     },
     {
       "display_name": "display_name_1",
-      "id": 1
+      "id": 1,
+      "stat_changes": [
+        {"bedtime_hour": 5},
+        {"kit_weight": 5},
+        {"max_mph": 5},
+        {"odds_health_issue": 0.5},
+        {"odds_mech_issue": 0.5},
+        {"pace": "MERCKX"},
+        {"wakeup_hour": 5}
+      ]
     }
   ]
   )";
 
   SECTION("Get action by id works") {
-   Actions actions(action_json);
+   Actions actions(game, action_json);
    ActionModel model_0 = actions.getAction(0);
    ActionModel model_1 = actions.getAction(1);
    REQUIRE(model_0.display_name == "display_name_0");
    REQUIRE(model_1.display_name == "display_name_1");
+  }
+
+  SECTION("StatModel Can parse stat changes") {
+    Actions actions(game, action_json);
+    ActionModel model_1 = actions.getAction(1);
+    auto stat_model = model_1.stat_delta;
+    REQUIRE(stat_model.bedtime_hour == 5);
+    REQUIRE(stat_model.kit_weight == 5);
+    REQUIRE(stat_model.max_mph == 5);
+    REQUIRE(stat_model.odds_health_issue == .5);
+    REQUIRE(stat_model.odds_mech_issue == .5);
+    REQUIRE(stat_model.pace == StatModel::Pace::MERCKX);
+    REQUIRE(stat_model.wakeup_hour == 5);
   }
 }
 
@@ -125,8 +157,9 @@ TEST_CASE("EventModel", "[unit]") {
   }
 }
 
-TEST_CASE("Game::bump*", "[unit]") {
-  libgtfoklahoma::Game game("");
+TEST_CASE("Game", "[unit]") {
+  using namespace libgtfoklahoma;
+  Game game("");
 
   SECTION("bumpHour") {
     REQUIRE(game.hour() == 0);
@@ -150,5 +183,108 @@ TEST_CASE("Game::bump*", "[unit]") {
     auto actual_value = game.bumpTick();
     auto expected_value = 1;
     REQUIRE(actual_value == expected_value);
+  }
+
+  SECTION("updateStats") {
+    StatModel stats_delta;
+    stats_delta.bedtime_hour = 5;
+    stats_delta.kit_weight = 5;
+    stats_delta.max_mph = 5;
+    stats_delta.odds_health_issue = .5;
+    stats_delta.odds_mech_issue = .5;
+    stats_delta.pace = StatModel::Pace::MERCKX;
+    stats_delta.wakeup_hour = 5;
+
+    auto &initial_stats = game.getStats();
+    auto initial_bedtime_hour = initial_stats->bedtime_hour;
+    auto initial_kit_weight = initial_stats->kit_weight;
+    auto initial_max_mph = initial_stats->max_mph;
+    auto initial_odds_health_issue = initial_stats->odds_health_issue;
+    auto initial_odds_mech_issue = initial_stats->odds_mech_issue;
+    auto initial_wakeup_hour = initial_stats->wakeup_hour;
+
+    game.updateStats(stats_delta);
+    auto &updated_stats = game.getStats();
+
+    REQUIRE(updated_stats->bedtime_hour == initial_bedtime_hour + 5);
+    REQUIRE(updated_stats->kit_weight == initial_kit_weight + 5);
+    REQUIRE(updated_stats->max_mph == initial_max_mph + 5);
+    REQUIRE(updated_stats->odds_health_issue == initial_odds_health_issue + .5);
+    REQUIRE(updated_stats->odds_mech_issue == initial_odds_mech_issue + .5);
+    REQUIRE(updated_stats->pace == StatModel::Pace::MERCKX);
+    REQUIRE(updated_stats->wakeup_hour == initial_wakeup_hour + 5);
+  }
+}
+
+TEST_CASE("Rules", "[unit]") {
+  using namespace libgtfoklahoma::rules;
+  SECTION("RealSpeed") {
+
+    // Just sanity check my back of the napkin shit
+    auto actual_result = RealSpeed(9, 50);
+    REQUIRE(actual_result == 7);
+
+    actual_result = RealSpeed(9, 100);
+    REQUIRE(actual_result == 6);
+
+    actual_result = RealSpeed(9, 10);
+    REQUIRE(actual_result == 9);
+  }
+}
+
+TEST_CASE("Stats", "[unit]") {
+  using namespace libgtfoklahoma;
+
+  SECTION("Test +") {
+    StatModel lhs;
+    lhs.bedtime_hour = 0;
+    lhs.kit_weight = 0;
+    lhs.max_mph = 0;
+    lhs.odds_health_issue = 0;
+    lhs.odds_mech_issue = 0;
+    lhs.pace = StatModel::Pace::CHILL_AF;
+    lhs.wakeup_hour = 0;
+
+    StatModel rhs;
+    rhs.bedtime_hour = 5;
+    rhs.kit_weight = 5;
+    rhs.max_mph = 5;
+    rhs.odds_health_issue = .5;
+    rhs.odds_mech_issue = .5;
+    rhs.pace = StatModel::Pace::MERCKX;
+    rhs.wakeup_hour = 5;
+
+    auto result = lhs + rhs;
+    REQUIRE(result.bedtime_hour == 5);
+    REQUIRE(result.kit_weight == 5);
+    REQUIRE(result.max_mph == 5);
+    REQUIRE(result.odds_health_issue == .5);
+    REQUIRE(result.odds_mech_issue == .5);
+    REQUIRE(result.pace == StatModel::Pace::MERCKX);
+    REQUIRE(result.wakeup_hour == 5);
+  }
+
+  SECTION("StatModel::FromString") {
+    using StatFieldsType = std::vector<
+        std::pair<std::string, std::variant<int32_t, double, std::string>>>;
+    StatFieldsType input = {
+        {"bedtime_hour", 5},
+        {"kit_weight", 5},
+        {"max_mph", 5},
+        {"odds_health_issue", .5f},
+        {"odds_mech_issue", .5f},
+        {"pace", std::string("MERCKX")},
+        {"wakeup_hour", 5}
+    };
+
+    auto output = StatModel::FromString(input);
+
+    REQUIRE(output.bedtime_hour == 5);
+    REQUIRE(output.kit_weight == 5);
+    REQUIRE(output.max_mph == 5);
+    REQUIRE(output.odds_health_issue == .5);
+    REQUIRE(output.odds_mech_issue == .5);
+    REQUIRE(output.pace == StatModel::Pace::MERCKX);
+    REQUIRE(output.wakeup_hour == 5);
   }
 }

@@ -45,7 +45,6 @@ private:
   std::thread m_eventLoopThread;
   std::atomic<bool> m_running;
 
-  Actions m_actions;
   Events m_events;
   EventModel m_nextEvent;
   Game m_game;

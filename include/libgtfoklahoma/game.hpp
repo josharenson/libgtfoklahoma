@@ -21,6 +21,9 @@
 #include <string>
 
 namespace libgtfoklahoma {
+
+class Actions;
+class StatModel;
 class Game {
 public:
   explicit Game(std::string name);
@@ -38,12 +41,18 @@ public:
   void setTick(int64_t tick);
 
   // TODO: Make dynamic based on stats
-  int32_t ticksUntiNextMile() const;
+  [[nodiscard]] int32_t ticksUntiNextMile() const;
+
+  std::unique_ptr<Actions> &getActions() { return m_actions; }
+  std::unique_ptr<StatModel> &getStats() { return m_stats; }
+  void updateStats(StatModel &delta);
 
 private:
+  std::unique_ptr<Actions> m_actions;
   int32_t m_currentHour;
   int32_t m_currentMile;
   int64_t m_currentTick;
   std::string m_name;
+  std::unique_ptr<StatModel> m_stats;
 };
 }

@@ -24,14 +24,13 @@
 #include <spdlog/spdlog.h>
 
 // Local includes
-#include <libgtfoklahoma/constants.hpp>
 #include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/rules.hpp>
 
 using namespace libgtfoklahoma;
 
 Engine::Engine(Game game)
 : m_running(false)
-, m_actions(Actions())
 , m_events(Events(game.mile()))
 , m_nextEvent(m_events.nextEvent())
 , m_game(std::move(game)) {}
@@ -58,9 +57,9 @@ void Engine::mainLoop() {
   int32_t ticksUntilNextMile = m_game.ticksUntiNextMile();
 
   while (m_running) {
-    std::this_thread::sleep_for(kTickDelayMs);
+    std::this_thread::sleep_for(rules::kTickDelayMs);
 
-    if (!(m_game.tick() % kTicksPerGameHour)) {
+    if (!(m_game.tick() % rules::kTicksPerGameHour)) {
       auto new_hour = m_game.bumpHour();
       for (const auto &observer : m_eventObservers) {
         observer->onHourChanged(new_hour);
@@ -71,7 +70,7 @@ void Engine::mainLoop() {
       for (const auto &observer : m_eventObservers) {
         observer->onEvent(m_nextEvent);
         auto actionIdToPerform = m_nextEvent.chosenAction().get();
-        m_actions.performAction(actionIdToPerform);
+        m_game.getActions()->performAction(actionIdToPerform);
       }
       m_nextEvent = m_events.nextEvent();
     }

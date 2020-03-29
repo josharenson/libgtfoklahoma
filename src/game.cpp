@@ -15,15 +15,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/stats.hpp>
 
 using namespace libgtfoklahoma;
 
 Game::Game(std::string name)
-: m_currentHour(0)
+: m_actions(std::make_unique<Actions>(*this))
+, m_currentHour(0)
 , m_currentMile(0)
 , m_currentTick(0)
-, m_name(std::move(name)) {}
+, m_name(std::move(name))
+, m_stats(std::make_unique<StatModel>()) {}
 
 int32_t Game::hour() const { return m_currentHour % 24; }
 int32_t Game::bumpHour() {
@@ -48,4 +52,8 @@ void Game::setTick(const int64_t tick) { m_currentTick = tick; }
 
 int32_t Game::ticksUntiNextMile() const {
   return 5;
+}
+
+void Game::updateStats(StatModel &delta) {
+  *m_stats = *m_stats + delta;
 }

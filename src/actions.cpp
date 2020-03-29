@@ -29,7 +29,9 @@ Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
   }
 
   auto actionIsValid = [this] (const rapidjson::Value &action) {
-    return action["display_name"].IsString() && action["id"].IsInt() &&
+    return action.HasMember("display_name") && action["display_name"].IsString() &&
+           action.HasMember("id") && action["id"].IsInt() &&
+
            !m_actions.count(action["id"].GetInt()) &&
            action["stat_changes"].IsArray();
   };
@@ -39,8 +41,7 @@ Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
       ActionModel model;
       model.display_name = action["display_name"].GetString();
       model.id = action["id"].GetInt();
-      model.stat_delta = StatModel::FromString(
-          parseStatModifiers(action["stat_changes"].GetArray()));
+      model.stat_delta = Stats::FromJson(action["stat_changes"].GetArray());
 
       m_actions[model.id] = std::move(model);
     } else {
@@ -64,28 +65,3 @@ void Actions::performAction(int32_t id) {
   m_game.updateStats(model.stat_delta);
 }
 
-std::vector<StatNameDeltaPair> Actions::parseStatModifiers(const rapidjson::GenericArray<true, rapidjson::Value>& statChangesArray) {
-  std::vector<StatNameDeltaPair> result;
-
-
-
-  for (int i = 0; i < statChangesArray.Size(); i++) {
-
-    // This is dumb, but the only way to get a key name
-    std::string stat_name;
-    std::variant<int32_t, double, std::string> stat_value;
-    for (auto m = statChangesArray[i].MemberBegin(); m != statChangesArray[i].MemberEnd(); m++) {
-      stat_name = m->name.GetString();
-
-      if (m->value.IsInt()) {
-        stat_value = m->value.GetInt();
-      } else if (m->value.IsDouble()) {
-        stat_value = m->value.GetDouble();
-      } else if (m->value.IsString()) {
-        stat_value = m->value.GetString();
-      }
-      result.emplace_back(stat_name, stat_value);
-    }
-  }
-  return result;
-}

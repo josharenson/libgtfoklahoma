@@ -23,9 +23,12 @@
 #include <variant>
 #include <vector>
 
+#include <rapidjson/document.h>
+
 #include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/items.hpp>
 #include <libgtfoklahoma/rules.hpp>
 #include <libgtfoklahoma/stats.hpp>
 
@@ -216,6 +219,47 @@ TEST_CASE("Game", "[unit]") {
   }
 }
 
+TEST_CASE("Items", "[unit]") {
+  using namespace libgtfoklahoma;
+
+  SECTION("Test Parsing") {
+    StatModel expected_stat_model;
+    expected_stat_model.kit_weight = 5;
+    expected_stat_model.max_mph = 5;
+    expected_stat_model.odds_health_issue = .5;
+    expected_stat_model.odds_mech_issue = .5;
+    expected_stat_model.pace = StatModel::Pace::MERCKX;
+
+    const char *itemJson = R"(
+    [
+      {
+        "id": 0,
+        "category": "BIKE",
+        "cost": 42069,
+        "display_name": "Taco Item",
+        "image_url": "teapot.svg",
+        "stat_changes": [
+          {"kit_weight": 5},
+          {"max_mph": 5},
+          {"odds_health_issue": 0.5},
+          {"odds_mech_issue": 0.5},
+          {"pace": "MERCKX"}
+        ]
+      }
+    ]
+    )";
+
+    Items items(itemJson);
+    auto actual_item = items.getItem(0);
+    REQUIRE(actual_item.id == 0);
+    REQUIRE(actual_item.category == ItemModel::Category::BIKE);
+    REQUIRE(actual_item.cost == 42069);
+    REQUIRE(actual_item.display_name == "Taco Item");
+    REQUIRE(actual_item.image_url == "teapot.svg");
+    REQUIRE(actual_item.stat_delta == expected_stat_model);
+  }
+}
+
 TEST_CASE("Rules", "[unit]") {
   using namespace libgtfoklahoma::rules;
   SECTION("RealSpeed") {
@@ -264,20 +308,27 @@ TEST_CASE("Stats", "[unit]") {
     REQUIRE(result.wakeup_hour == 5);
   }
 
-  SECTION("StatModel::FromString") {
-    using StatFieldsType = std::vector<
-        std::pair<std::string, std::variant<int32_t, double, std::string>>>;
-    StatFieldsType input = {
-        {"bedtime_hour", 5},
-        {"kit_weight", 5},
-        {"max_mph", 5},
-        {"odds_health_issue", .5f},
-        {"odds_mech_issue", .5f},
-        {"pace", std::string("MERCKX")},
-        {"wakeup_hour", 5}
+  SECTION("Stats::FromJson") {
+    const char *statJson = R"(
+      [
+        {"bedtime_hour": 5},
+        {"kit_weight": 5},
+        {"max_mph": 5},
+        {"odds_health_issue": 0.5},
+        {"odds_mech_issue": 0.5},
+        {"pace": "MERCKX"},
+        {"wakeup_hour": 5}
+      ]
+    )";
+
+    // HACK
+    const auto get_arr = [](const rapidjson::Document &doc) {
+      return doc.GetArray();
     };
 
-    auto output = StatModel::FromString(input);
+    rapidjson::Document json_document;
+    json_document.Parse(statJson);
+    auto output = Stats::FromJson(get_arr(json_document));
 
     REQUIRE(output.bedtime_hour == 5);
     REQUIRE(output.kit_weight == 5);

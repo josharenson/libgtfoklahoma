@@ -17,41 +17,50 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
-#include <utility>
-#include <variant>
-#include <vector>
 
 #include <rapidjson/document.h>
 
-#include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/stats.hpp>
 
 namespace libgtfoklahoma {
-struct ActionModel {
+
+struct ItemModel {
+  enum class Category {INVALID, BIKE};
+  int32_t id;
+  Category category;
+  int32_t cost; // For display
   std::string display_name;
-  int32_t id {-1};
+  std::string image_url;
   StatModel stat_delta;
 };
 
-class Actions {
+class Items {
 public:
-  explicit Actions(Game &game, const char *actionJson=kActionJson);
-  [[nodiscard]] ActionModel getAction(int32_t id) const;
-  void performAction(int32_t id);
+  explicit Items(const char *itemsJson=kItemsJson);
+  ItemModel getItem(int32_t id);
 
 private:
-  Game &m_game;
-  rapidjson::Document m_actionsDocument;
-  std::map<int32_t, ActionModel> m_actions;
-  inline static const char *kActionJson = R"JSON(
+  rapidjson::Document m_itemsDocument;
+  std::map<int32_t, ItemModel> m_items;
+  inline static const char *kItemsJson = R"JSON(
   [
-    {
-      "display_name": "GTFO",
-      "id": 0,
-      "stat_changes": [{}]
-    }
+      {
+        "id": 0
+        "category": "BIKE",
+        "cost": 1200,
+        "display_name": "Burly - Over The Road Trucker",
+        "image_url": "",
+        "stat_changes": [
+          {"kit_weight", 35},
+          {"max_mph", 12},
+          {"money_remaining": 1200},
+          {"odds_mech_issue", -0.05},
+          {"odds_health_issue", -0.02}
+        ]
+      }
   ]
   )JSON";
 };

@@ -20,7 +20,9 @@ set(LIBGTFOKLAHOMA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/actions.cpp
     ${CMAKE_SOURCE_DIR}/src/engine.cpp
     ${CMAKE_SOURCE_DIR}/src/events.cpp
-    ${CMAKE_SOURCE_DIR}/src/game.cpp)
+    ${CMAKE_SOURCE_DIR}/src/game.cpp
+    ${CMAKE_SOURCE_DIR}/src/items.cpp
+    ${CMAKE_SOURCE_DIR}/src/stats.cpp)
 
 add_library(libgtfoklahoma STATIC ${LIBGTFOKLAHOMA_SOURCES})
 target_include_directories(libgtfoklahoma PUBLIC

@@ -18,10 +18,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
-#include <cstdint>
 #include <string>
-#include <variant>
-#include <vector>
 
 #include <rapidjson/document.h>
 
@@ -164,6 +161,40 @@ TEST_CASE("Game", "[unit]") {
   using namespace libgtfoklahoma;
   Game game("");
 
+  const char *validActionJson = R"(
+  [
+    {
+      "display_name": "display_name_0",
+      "id": 0,
+      "stat_changes": [{}]
+    }
+  ]
+  )";
+
+  const char *validEventJson = R"(
+  [
+    {
+      "actions": [0],
+      "description": "description_0",
+      "display_name": "display_name_0",
+      "mile": 0
+    }
+  ]
+  )";
+
+  const char *validItemJson = R"(
+  [
+    {
+        "id": 0,
+        "category": "BIKE",
+        "cost": 42069,
+        "display_name": "Taco Item",
+        "image_url": "teapot.svg",
+        "stat_changes": [{}]
+    }
+  ]
+  )";
+
   SECTION("bumpHour") {
     REQUIRE(game.hour() == 0);
     auto actual_value = game.bumpHour();
@@ -186,6 +217,44 @@ TEST_CASE("Game", "[unit]") {
     auto actual_value = game.bumpTick();
     auto expected_value = 1;
     REQUIRE(actual_value == expected_value);
+  }
+
+  SECTION("Inventory") {
+    Game my_game("", validActionJson, validEventJson, validItemJson);
+
+    // Is initially empty
+    REQUIRE(my_game.getInventory().empty());
+
+    // Adding 0 does nothing
+    my_game.addItemToInventory(0,0);
+    REQUIRE(my_game.getInventory().empty());
+
+    // Adding 1 works
+    my_game.addItemToInventory(0, 1);
+    REQUIRE(my_game.getInventory().size() == 1);
+
+    // Adding 1 more of the same bumps quantity
+    my_game.addItemToInventory(0, 1);
+    REQUIRE(my_game.getInventory().size() == 2);
+
+    // Get inventory returns 2 of the items added
+    auto items = my_game.getInventory();
+    for (const auto &item : items) {
+      REQUIRE(item.id == 0);
+    }
+
+    // Remove 1
+    my_game.removeItemFromInventory(0);
+    REQUIRE(my_game.getInventory().size() == 1);
+
+    // Remove 1 more and assert empty
+    my_game.removeItemFromInventory(0);
+    REQUIRE(my_game.getInventory().empty());
+
+    // Add 2 and remove 3, make sure all are removed
+    my_game.addItemToInventory(0, 2);
+    my_game.removeItemFromInventory(0, 3);
+    REQUIRE(my_game.getInventory().empty());
   }
 
   SECTION("updateStats") {

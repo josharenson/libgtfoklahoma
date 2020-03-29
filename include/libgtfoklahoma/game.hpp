@@ -18,15 +18,22 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
+
+#include <libgtfoklahoma/items.hpp>
 
 namespace libgtfoklahoma {
 
 class Actions;
-class StatModel;
+struct StatModel;
 class Game {
 public:
   explicit Game(std::string name);
+  explicit Game(std::string name,
+                const char *actionJson,
+                const char *eventJson,
+                const char *itemJson);
 
   [[nodiscard]] int32_t hour() const;
   int32_t bumpHour();
@@ -44,6 +51,11 @@ public:
   [[nodiscard]] int32_t ticksUntiNextMile() const;
 
   std::unique_ptr<Actions> &getActions() { return m_actions; }
+
+  void addItemToInventory(int32_t id, int32_t quantity);
+  void removeItemFromInventory(int32_t id, int32_t quantity=1);
+  [[nodiscard]] std::vector<ItemModel> getInventory() const;
+
   std::unique_ptr<StatModel> &getStats() { return m_stats; }
   void updateStats(StatModel &delta);
 
@@ -52,6 +64,8 @@ private:
   int32_t m_currentHour;
   int32_t m_currentMile;
   int64_t m_currentTick;
+  std::map<int32_t, int32_t> m_inventory;
+  std::unique_ptr<Items> m_items;
   std::string m_name;
   std::unique_ptr<StatModel> m_stats;
 };

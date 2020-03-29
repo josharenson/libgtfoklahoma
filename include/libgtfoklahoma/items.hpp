@@ -48,17 +48,17 @@ private:
   inline static const char *kItemsJson = R"JSON(
   [
       {
-        "id": 0
+        "id": 0,
         "category": "BIKE",
         "cost": 1200,
         "display_name": "Burly - Over The Road Trucker",
         "image_url": "",
         "stat_changes": [
-          {"kit_weight", 35},
-          {"max_mph", 12},
+          {"kit_weight": 35},
+          {"max_mph": 12},
           {"money_remaining": 1200},
-          {"odds_mech_issue", -0.05},
-          {"odds_health_issue", -0.02}
+          {"odds_mech_issue": -0.05},
+          {"odds_health_issue": -0.02}
         ]
       }
   ]

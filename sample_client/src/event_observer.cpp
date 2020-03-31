@@ -16,7 +16,9 @@
  */
 
 // Library includes
+#include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
+#include <libgtfoklahoma/items.hpp>
 
 // System includes
 #include <iostream>
@@ -39,9 +41,17 @@ void EventObserver::onMileChanged(int32_t mile) {
 
 }
 
-void EventObserver::onEvent(EventModel &model) {
+void EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) {
   spdlog::debug("POI Encountered-> " + model.display_name);
   int32_t result;
+
+  int choice = 0;
+  for (const auto &action :actions) {
+    std::cout << "\t" + std::to_string(choice) + ". " + action.get().display_name
+    << std::endl;
+    choice++;
+  }
+
   while (true) {
     std::cout << "Enter a number-> ";
     std::cin >> result;
@@ -51,5 +61,33 @@ void EventObserver::onEvent(EventModel &model) {
       std::cout << "\nInvalid choice!" << std::endl;
     }
   }
+}
+
+void EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) {
+  spdlog::debug("Entered a store!");
+  std::cout << "Items available: \n";
+
+  int i = 0;
+  for (const auto &item : items) {
+    std::cout << "\t" + std::to_string(i) + ". " +
+    item.display_name << std::endl;
+    i++;
+  }
+  std::cout << "\t" + std::to_string(i) + ". Leave store" << std::endl;
+
+  int32_t result;
+  while (true) {
+    std::cout << "Enter the number of an item to purchase it-> ";
+    std::cin >> result;
+
+    if (result == i) {
+      break;
+    } else if (result < i) {
+      action.purchaseItem(items[result].id);
+    } else {
+      std::cout << "\nInvalid choice!" << std::endl;
+    }
+  }
+  action.completePurchase();
 }
 

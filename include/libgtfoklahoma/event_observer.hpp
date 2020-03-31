@@ -18,13 +18,17 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace libgtfoklahoma {
 
+class ActionModel;
 class Engine;
-class EventModel;
+struct EventModel;
+struct ItemModel;
 class IEventObserver {
 public:
 
@@ -44,6 +48,11 @@ public:
   /*
    * @param model A reference to the model describing the point of interest.
    */
-  virtual void onEvent(EventModel &model) = 0;
+  virtual void onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) = 0;
+
+  /*
+   * @param models A vector of items available in the store
+   */
+  virtual void onStoreEntered(ActionModel &action, std::vector<ItemModel> &items) = 0;
 };
 }

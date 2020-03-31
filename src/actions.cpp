@@ -19,9 +19,14 @@
 
 #include <spdlog/spdlog.h>
 
+#include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/items.hpp>
+
 using namespace libgtfoklahoma;
 
-Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
+Actions::Actions(Game &game, const char *actionJson)
+: m_game(game) {
+
   if (m_actionsDocument.Parse(actionJson).HasParseError() ||
       !m_actionsDocument.IsArray()) {
     spdlog::error("Parsing error when parsing actions json");
@@ -31,9 +36,31 @@ Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
   auto actionIsValid = [this] (const rapidjson::Value &action) {
     return action.HasMember("display_name") && action["display_name"].IsString() &&
            action.HasMember("id") && action["id"].IsInt() &&
+           action.HasMember("type") && action["type"].IsArray();
+  };
 
-           !m_actions.count(action["id"].GetInt()) &&
-           action["stat_changes"].IsArray();
+  auto getActionType = [](const rapidjson::GenericArray<true, rapidjson::Value> &arr) {
+    uint32_t type = 0;
+    for (const auto &elem : arr) {
+      if (!elem.IsString()) {
+        spdlog::warn("Error parsing action type");
+        continue;
+      }
+
+      auto str_value = elem.GetString();
+      if (!strcmp(str_value, "NONE")) {
+        type |= ActionModel::ActionType::NONE;
+      }
+
+      else if (!strcmp(str_value, "STAT_CHANGE")) {
+        type |= ActionModel::ActionType::STAT_CHANGE;
+      }
+
+      else if (!strcmp(str_value, "STORE")) {
+        type |= ActionModel::ActionType::STORE;
+      }
+    }
+    return type;
   };
 
   for (const auto &action : m_actionsDocument.GetArray()) {
@@ -41,7 +68,17 @@ Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
       ActionModel model;
       model.display_name = action["display_name"].GetString();
       model.id = action["id"].GetInt();
-      model.stat_delta = Stats::FromJson(action["stat_changes"].GetArray());
+      model.type = getActionType(action["type"].GetArray());
+
+      if (model.isStatChangeType() && action.HasMember("stat_changes")){
+        model.stat_delta = Stats::FromJson(action["stat_changes"].GetArray());
+      }
+
+      if (model.isStoreType() && action.HasMember("items")) {
+        for (const auto &id : action["items"].GetArray()) {
+          model.item_ids.push_back(id.GetInt());
+        }
+      }
 
       m_actions[model.id] = std::move(model);
     } else {
@@ -50,18 +87,31 @@ Actions::Actions(Game &game, const char *actionJson) : m_game(game) {
   }
 }
 
-ActionModel Actions::getAction(int32_t id) const {
+ActionModel &Actions::getAction(int32_t id) {
   if (m_actions.count(id)) {
     return m_actions.at(id);
   }
 
   spdlog::warn("Requested action id {} that does not exist.", id);
-  return {};
+  return m_actions.at(0);
 }
 
-void Actions::performAction(int32_t id) {
-  ActionModel model = getAction(id);
+void Actions::performAction(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
+  ActionModel &action = getAction(id);
   spdlog::debug("Performing action {}", id);
-  m_game.updateStats(model.stat_delta);
+
+  if (action.isStatChangeType()) {
+    m_game.updateStats(action.stat_delta);
+  }
+
+  if (action.isStoreType()) {
+    std::vector<ItemModel> items;
+    for (const auto &item_id : action.item_ids) {
+      items.emplace_back(m_game.getItems()->getItem(item_id));
+    }
+    observer->onStoreEntered(action, items);
+    auto purchasedItems = action.purchasedItems().get();
+    int i =7;
+  }
 }
 

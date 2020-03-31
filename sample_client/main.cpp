@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   spdlog::set_level(spdlog::level::debug);
 
   libgtfoklahoma::Game game("");
-  auto engine = std::make_shared<libgtfoklahoma::Engine>(game);
+  auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
   auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>();
   engine->registerEventObserver(std::move(eventObserver));
   engine->start();

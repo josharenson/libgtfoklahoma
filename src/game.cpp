@@ -101,7 +101,7 @@ std::vector<ItemModel> Game::getInventory() const {
   return result;
 }
 
-void Game::updateStats(StatModel &delta) {
+void Game::updateStats(const StatModel &delta) {
   *m_stats = *m_stats + delta;
 }
 

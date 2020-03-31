@@ -29,11 +29,11 @@
 
 using namespace libgtfoklahoma;
 
-Engine::Engine(Game game)
+Engine::Engine(Game &game)
 : m_running(false)
 , m_events(Events(game.mile()))
 , m_nextEvent(m_events.nextEvent())
-, m_game(std::move(game)) {}
+, m_game(game) {}
 
 Engine::~Engine() { stop(); }
 
@@ -68,9 +68,15 @@ void Engine::mainLoop() {
 
     if (m_nextEvent.mile == m_game.mile()) {
       for (const auto &observer : m_eventObservers) {
-        observer->onEvent(m_nextEvent);
+
+        std::vector<std::reference_wrapper<ActionModel>> actions;
+        for (const auto &action_id : m_nextEvent.action_ids) {
+          actions.emplace_back(m_game.getActions()->getAction(action_id));
+        }
+
+        observer->onEvent(m_nextEvent, actions);
         auto actionIdToPerform = m_nextEvent.chosenAction().get();
-        m_game.getActions()->performAction(actionIdToPerform);
+        m_game.getActions()->performAction(actionIdToPerform, observer);
       }
       m_nextEvent = m_events.nextEvent();
     }

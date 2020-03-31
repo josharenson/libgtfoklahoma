@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <string>
 #include <vector>
@@ -72,7 +73,7 @@ private:
       "mile": 0
     },
     {
-      "actions": [0],
+      "actions": [0, 1],
       "description": "",
       "display_name": "Like's Country Store",
       "mile": 2

@@ -51,13 +51,14 @@ public:
   [[nodiscard]] int32_t ticksUntiNextMile() const;
 
   std::unique_ptr<Actions> &getActions() { return m_actions; }
+  std::unique_ptr<Items> &getItems() { return m_items; }
 
   void addItemToInventory(int32_t id, int32_t quantity);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
   [[nodiscard]] std::vector<ItemModel> getInventory() const;
 
   std::unique_ptr<StatModel> &getStats() { return m_stats; }
-  void updateStats(StatModel &delta);
+  void updateStats(const StatModel &delta);
 
 private:
   std::unique_ptr<Actions> m_actions;

@@ -38,7 +38,8 @@ TEST_CASE("Actions::getAction", "[unit]") {
     {
       "display_name": "display_name_0",
       "id": 0,
-      "stat_changes": [{}]
+      "stat_changes": [{}],
+      "type": ["STAT_CHANGE"]
     },
     {
       "display_name": "display_name_1",
@@ -51,22 +52,30 @@ TEST_CASE("Actions::getAction", "[unit]") {
         {"odds_mech_issue": 0.5},
         {"pace": "MERCKX"},
         {"wakeup_hour": 5}
-      ]
+      ],
+      "type": ["STAT_CHANGE"]
+    },
+    {
+      "display_name": "display_name_1",
+      "id": 2,
+      "items": [0, 1],
+      "stat_changes": [{"kit_weight": 5}],
+      "type": ["STAT_CHANGE", "STORE"]
     }
   ]
   )";
 
   SECTION("Get action by id works") {
    Actions actions(game, action_json);
-   ActionModel model_0 = actions.getAction(0);
-   ActionModel model_1 = actions.getAction(1);
+   ActionModel &model_0 = actions.getAction(0);
+   ActionModel &model_1 = actions.getAction(1);
    REQUIRE(model_0.display_name == "display_name_0");
    REQUIRE(model_1.display_name == "display_name_1");
   }
 
   SECTION("StatModel Can parse stat changes") {
     Actions actions(game, action_json);
-    ActionModel model_1 = actions.getAction(1);
+    ActionModel &model_1 = actions.getAction(1);
     auto stat_model = model_1.stat_delta;
     REQUIRE(stat_model.bedtime_hour == 5);
     REQUIRE(stat_model.kit_weight == 5);
@@ -75,6 +84,20 @@ TEST_CASE("Actions::getAction", "[unit]") {
     REQUIRE(stat_model.odds_mech_issue == .5);
     REQUIRE(stat_model.pace == StatModel::Pace::MERCKX);
     REQUIRE(stat_model.wakeup_hour == 5);
+  }
+
+  SECTION("actions types work") {
+    Actions actions(game, action_json);
+    ActionModel &model = actions.getAction(2);
+
+    REQUIRE_FALSE(model.isNoneType());
+    REQUIRE(model.isStatChangeType());
+    REQUIRE(model.isStoreType());
+
+    REQUIRE(model.item_ids[0] == 0);
+    REQUIRE(model.item_ids[1] == 1);
+
+    REQUIRE(model.stat_delta.kit_weight == 5);
   }
 }
 
@@ -166,6 +189,7 @@ TEST_CASE("Game", "[unit]") {
     {
       "display_name": "display_name_0",
       "id": 0,
+      "type": ["STAT_CHANGE"],
       "stat_changes": [{}]
     }
   ]

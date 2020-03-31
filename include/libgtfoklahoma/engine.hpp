@@ -31,7 +31,7 @@ namespace libgtfoklahoma {
 class IEventObserver;
 class Engine {
 public:
-  explicit Engine(Game game);
+  explicit Engine(Game &game);
   ~Engine();
 
   void registerEventObserver(std::unique_ptr<IEventObserver> observer);
@@ -47,7 +47,7 @@ private:
 
   Events m_events;
   EventModel m_nextEvent;
-  Game m_game;
+  Game &m_game;
   std::vector<std::unique_ptr<IEventObserver>> m_eventObservers;
 };
 }

@@ -18,16 +18,68 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+#include <optional>
 #include <string>
 
 #include <rapidjson/document.h>
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/issues.hpp>
 #include <libgtfoklahoma/items.hpp>
 #include <libgtfoklahoma/rules.hpp>
 #include <libgtfoklahoma/stats.hpp>
+
+// Used to instantiate a Game when you don't care about these types
+const char *validActionJson = R"(
+  [
+    {
+      "display_name": "display_name_0",
+      "id": 0,
+      "type": ["STAT_CHANGE"],
+      "stat_changes": [{}]
+    }
+  ]
+  )";
+
+const char *validEventJson = R"(
+  [
+    {
+      "actions": [0],
+      "description": "description_0",
+      "display_name": "display_name_0",
+      "mile": 0
+    }
+  ]
+  )";
+
+const char *validIssueJson = R"(
+  [
+    {
+      "id": 0,
+      "actions": [0]
+      "category": "HEALTH",
+      "description": "Fake Health Issue",
+      "display_name": "Fake News!",
+      "image_url": ""
+    }
+  ]
+  )";
+
+const char *validItemJson = R"(
+  [
+    {
+        "id": 0,
+        "category": "BIKE",
+        "cost": 42069,
+        "display_name": "Taco Item",
+        "image_url": "teapot.svg",
+        "stat_changes": [{}]
+    }
+  ]
+  )";
 
 TEST_CASE("Actions::getAction", "[unit]") {
   using namespace libgtfoklahoma;
@@ -184,40 +236,7 @@ TEST_CASE("Game", "[unit]") {
   using namespace libgtfoklahoma;
   Game game("");
 
-  const char *validActionJson = R"(
-  [
-    {
-      "display_name": "display_name_0",
-      "id": 0,
-      "type": ["STAT_CHANGE"],
-      "stat_changes": [{}]
-    }
-  ]
-  )";
 
-  const char *validEventJson = R"(
-  [
-    {
-      "actions": [0],
-      "description": "description_0",
-      "display_name": "display_name_0",
-      "mile": 0
-    }
-  ]
-  )";
-
-  const char *validItemJson = R"(
-  [
-    {
-        "id": 0,
-        "category": "BIKE",
-        "cost": 42069,
-        "display_name": "Taco Item",
-        "image_url": "teapot.svg",
-        "stat_changes": [{}]
-    }
-  ]
-  )";
 
   SECTION("bumpHour") {
     REQUIRE(game.hour() == 0);
@@ -244,7 +263,7 @@ TEST_CASE("Game", "[unit]") {
   }
 
   SECTION("Inventory") {
-    Game my_game("", validActionJson, validEventJson, validItemJson);
+    Game my_game("", validActionJson, validEventJson, validIssueJson, validItemJson);
 
     // Is initially empty
     REQUIRE(my_game.getInventory().empty());
@@ -309,6 +328,144 @@ TEST_CASE("Game", "[unit]") {
     REQUIRE(updated_stats->odds_mech_issue == initial_odds_mech_issue + .5);
     REQUIRE(updated_stats->pace == StatModel::Pace::MERCKX);
     REQUIRE(updated_stats->wakeup_hour == initial_wakeup_hour + 5);
+  }
+}
+
+TEST_CASE("Issues", "[unit]") {
+  using namespace libgtfoklahoma;
+
+  SECTION("Test issues public api") {
+      const char *bare_minimum_issue = R"([{
+        "id": 1,
+        "description": "description",
+        "display_name": "display_name",
+        "image_url": "image_url",
+        "type": "HEALTH"
+      }])";
+      Game game("", validActionJson, validEventJson, bare_minimum_issue, validItemJson);
+
+      // No issues have happened yet
+      auto &issues = game.getIssues();
+      REQUIRE(issues->getIssuesThatHaveAlreadyHappened().empty());
+
+      // Mechanical issues are empty
+      REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == std::nullopt);
+
+      // Health issue is the expected
+      auto health_issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
+      REQUIRE(health_issue != std::nullopt);
+      REQUIRE(health_issue->id == 1);
+      REQUIRE(health_issue->description == "description");
+      REQUIRE(health_issue->display_name == "display_name");
+      REQUIRE(health_issue->image_url == "image_url");
+      REQUIRE(health_issue->type == IssueModel::Type::HEALTH);
+
+      // Issue was prevented from happening again
+      health_issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
+      REQUIRE(health_issue == std::nullopt);
+  }
+
+  SECTION("Dependent actions work") {
+    const char *action = R"(
+    [
+      {
+        "id": 0,
+        "display_name": "",
+        "type": ["NONE"]
+      }
+    ]
+    )";
+
+    const char *issue = R"(
+    [
+      {
+        "id": 0,
+        "dependent_actions": [0],
+        "description": "",
+        "display_name": "",
+        "image_url": "",
+        "type": "MECHANICAL"
+      }
+    ]
+    )";
+    Game game("", action, validEventJson, issue, validItemJson);
+    auto &issues = game.getIssues();
+
+    // There should initially be no mechanical issues available
+    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == std::nullopt);
+
+    // Perform the dependent action
+    game.getActions()->performAction(0, nullptr);
+
+    // Issue should be available now
+    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) != std::nullopt);
+  }
+
+  SECTION ("Dependent items work") {
+
+    const char *issue = R"(
+    [
+      {
+        "id": 0,
+        "dependent_inventory": [0],
+        "description": "",
+        "display_name": "",
+        "image_url": "",
+        "type": "MECHANICAL"
+      }
+    ]
+    )";
+
+    const char *item = R"(
+    [
+      {
+        "id": 0,
+        "category": "MISC",
+        "cost": 0,
+        "display_name": "",
+        "image_url": "",
+        "type": ["NONE"]
+      }
+    ]
+    )";
+
+    Game game("", validActionJson, validEventJson, issue, item);
+
+    auto &issues = game.getIssues();
+
+    // There should initially be no mechanical issues available
+    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == std::nullopt);
+
+    // Acquire the item
+    game.addItemToInventory(0);
+
+    // Issue should be available now
+    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) != std::nullopt);
+  }
+
+  SECTION ("Issue stat changes work") {
+    const char *issueJson = R"(
+    [
+      {
+        "id": 0,
+        "description": "",
+        "display_name": "",
+        "image_url": "",
+        "stat_changes": [
+          {"max_mph": -1}
+        ],
+        "type": "MECHANICAL"
+      }
+    ]
+    )";
+
+    Game game("", validActionJson, validEventJson, issueJson, validItemJson);
+    auto initial_max_mph = game.getStats()->max_mph;
+
+    // Popping the only issue should apply the stat delta
+    auto issue = game.getIssues()->popRandomIssue(IssueModel::Type::MECHANICAL);
+    REQUIRE(issue != std::nullopt);
+    REQUIRE(game.getStats()->max_mph == initial_max_mph - 1);
   }
 }
 

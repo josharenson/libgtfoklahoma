@@ -28,7 +28,7 @@
 namespace libgtfoklahoma {
 
 struct ItemModel {
-  enum class Category {INVALID, BIKE};
+  enum class Category {INVALID, BIKE, MISC};
   int32_t id;
   Category category;
   int32_t cost; // For display
@@ -60,6 +60,14 @@ private:
           {"odds_mech_issue": -0.05},
           {"odds_health_issue": -0.02}
         ]
+      },
+      {
+        "id": 1,
+        "category": "MISC",
+        "cost": 2,
+        "display_name": "Bick Lighter",
+        "image_url: "",
+        "stat_changes": [{}]
       }
   ]
   )JSON";

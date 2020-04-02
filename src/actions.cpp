@@ -111,7 +111,16 @@ void Actions::performAction(int32_t id, const std::unique_ptr<IEventObserver> &o
     }
     observer->onStoreEntered(action, items);
     auto purchasedItems = action.purchasedItems().get();
-    int i =7;
   }
+
+  m_actionsThatHaveAlreadyHappened.insert(id);
+}
+
+bool Actions::actionHasHappened(int32_t actionId) {
+  return m_actionsThatHaveAlreadyHappened.count(actionId);
+}
+
+void Actions::setActionsThatHaveAlreadyHappened(std::unordered_set<int32_t> actionIds) {
+  m_actionsThatHaveAlreadyHappened = std::move(actionIds);
 }
 

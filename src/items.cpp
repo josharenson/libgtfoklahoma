@@ -31,9 +31,8 @@ Items::Items(const char *itemsJson) {
   }
 
   auto get_category = [](const std::string &category){
-    if (category == "BIKE") {
-      return ItemModel::Category::BIKE;
-    }
+    if (category == "BIKE") { return ItemModel::Category::BIKE; }
+    if (category == "MISC") { return ItemModel::Category::MISC; }
 
     return ItemModel::Category::INVALID;
   };

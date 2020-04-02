@@ -21,11 +21,12 @@
 #include <map>
 #include <string>
 
-#include <libgtfoklahoma/items.hpp>
-
 namespace libgtfoklahoma {
 
 class Actions;
+class Issues;
+class Items;
+struct ItemModel;
 struct StatModel;
 class Game {
 public:
@@ -33,6 +34,7 @@ public:
   explicit Game(std::string name,
                 const char *actionJson,
                 const char *eventJson,
+                const char *issueJson,
                 const char *itemJson);
 
   [[nodiscard]] int32_t hour() const;
@@ -51,10 +53,12 @@ public:
   [[nodiscard]] int32_t ticksUntiNextMile() const;
 
   std::unique_ptr<Actions> &getActions() { return m_actions; }
+  std::unique_ptr<Issues> &getIssues() { return m_issues; }
   std::unique_ptr<Items> &getItems() { return m_items; }
 
-  void addItemToInventory(int32_t id, int32_t quantity);
+  void addItemToInventory(int32_t id, int32_t quantity=1);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
+  bool hasItemInInventory(int32_t id) const;
   [[nodiscard]] std::vector<ItemModel> getInventory() const;
 
   std::unique_ptr<StatModel> &getStats() { return m_stats; }
@@ -67,6 +71,7 @@ private:
   int64_t m_currentTick;
   std::map<int32_t, int32_t> m_inventory;
   std::unique_ptr<Items> m_items;
+  std::unique_ptr<Issues> m_issues;
   std::string m_name;
   std::unique_ptr<StatModel> m_stats;
 };

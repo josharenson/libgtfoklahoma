@@ -20,6 +20,8 @@
 #include <spdlog/spdlog.h>
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/items.hpp>
+#include <libgtfoklahoma/issues.hpp>
 #include <libgtfoklahoma/stats.hpp>
 
 using namespace libgtfoklahoma;
@@ -29,6 +31,7 @@ Game::Game(std::string name)
 , m_currentHour(0)
 , m_currentMile(0)
 , m_currentTick(0)
+, m_issues(std::make_unique<Issues>(*this))
 , m_items(std::make_unique<Items>())
 , m_name(std::move(name))
 , m_stats(std::make_unique<StatModel>()) {}
@@ -36,11 +39,13 @@ Game::Game(std::string name)
 Game::Game(std::string name,
            const char *actionJson,
            const char *eventJson,
+           const char *issueJson,
            const char *itemJson)
 : m_actions(std::make_unique<Actions>(*this, actionJson))
 , m_currentHour(0)
 , m_currentMile(0)
 , m_currentTick(0)
+, m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
 , m_stats(std::make_unique<StatModel>()) {}
@@ -89,6 +94,10 @@ void Game::removeItemFromInventory(int32_t id, int32_t quantity) {
   } else {
     m_inventory[id] -= quantity;
   }
+}
+
+bool Game::hasItemInInventory(int32_t id) const {
+  return m_inventory.count(id);
 }
 
 std::vector<ItemModel> Game::getInventory() const {

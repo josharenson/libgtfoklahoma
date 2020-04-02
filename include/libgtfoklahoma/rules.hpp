@@ -35,6 +35,7 @@ const int32_t kDefaultWakeupHour = 6;
 const int32_t kDefaultMoneyRemaining = 2000;
 
 #pragma mark - Safety Constants
+const int32_t kDefaultHealth = 100;
 const double kDefaultOddsHealthIssue = 0.4;
 const double kDefaultOddsMechanicalIssue = 0.4;
 

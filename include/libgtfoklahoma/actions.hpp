@@ -21,6 +21,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -78,10 +79,15 @@ public:
 
   void performAction(int32_t id, const std::unique_ptr<IEventObserver> &observer);
 
+  // For things that are dependent on actions having occurred
+  bool actionHasHappened(int32_t actionId);
+  void setActionsThatHaveAlreadyHappened(std::unordered_set<int32_t> actionIds);
+
 private:
   Game &m_game;
   rapidjson::Document m_actionsDocument;
   std::map<int32_t, ActionModel> m_actions;
+  std::unordered_set<int32_t> m_actionsThatHaveAlreadyHappened;
 
   inline static const char *kActionJson = R"JSON(
   [
@@ -92,11 +98,26 @@ private:
       "type": ["NONE"]
     },
     {
+      "comment": "Custom skip event",
+      "display_name": "Crap.",
+      "id": 1,
+      "type": ["NONE"]
+    },
+    {
       "comment": "Initial Store",
       "display_name": "Enter store",
-      "id": 1,
+      "id": 10,
       "items": [0],
       "type": ["STORE"]
+    },
+    {
+      "comment": "This ironically makes your faster as it increases comfort",
+      "id": 20,
+      "display_name": "Spark a doobie",
+      "type": ["STAT_CHANGE"],
+      "stat_changes": [
+        {"max_mph", 1}
+      ]
     }
   ]
   )JSON";

@@ -45,6 +45,8 @@ void EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrappe
   spdlog::debug("POI Encountered-> " + model.display_name);
   int32_t result;
 
+  std::cout << "Welcome to " + model.display_name << std::endl;
+
   int choice = 0;
   for (const auto &action :actions) {
     std::cout << "\t" + std::to_string(choice) + ". " + action.get().display_name
@@ -67,22 +69,24 @@ void EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklaho
   spdlog::debug("Entered a store!");
   std::cout << "Items available: \n";
 
-  int i = 0;
+  int choice = 0;
   for (const auto &item : items) {
-    std::cout << "\t" + std::to_string(i) + ". " +
+    std::cout << "\t" + std::to_string(choice) + ". " +
     item.display_name << std::endl;
-    i++;
+    choice++;
   }
-  std::cout << "\t" + std::to_string(i) + ". Leave store" << std::endl;
+  std::cout << "\t" + std::to_string(choice) + ". Leave store" << std::endl;
 
   int32_t result;
   while (true) {
-    std::cout << "Enter the number of an item to purchase it-> ";
+    std::cout << "Enter the number of an item to purchase it or " +
+    std::to_string(choice) + " to exit -> ";
+
     std::cin >> result;
 
-    if (result == i) {
+    if (result == choice) {
       break;
-    } else if (result < i) {
+    } else if (result < choice) {
       action.purchaseItem(items[result].id);
     } else {
       std::cout << "\nInvalid choice!" << std::endl;

@@ -15,9 +15,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
-
-#include <libgtfoklahoma/rules.hpp>
-
-TEST_CASE("Game", "[unit]") {}
-

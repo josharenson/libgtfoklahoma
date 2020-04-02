@@ -18,62 +18,46 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
-#include <future>
-#include <string>
+#include <map>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
-#include <spdlog/spdlog.h>
-#include <rapidjson/document.h>
+#include <libgtfoklahoma/event_model.hpp>
 
 namespace libgtfoklahoma {
-struct EventModel {
-  std::vector<int32_t> action_ids;
-  std::string description;
-  std::string display_name;
-  int32_t mile {-1};
 
-  bool chooseAction(int32_t id) {
-    if (actionIdIsValid(id)) {
-      m_chosenAction.set_value(id);
-      return true;
-    } else {
-      spdlog::error("{} is an invalid action id for this event!", id);
-      return false;
-    }
-  }
-
-  std::future<int32_t> chosenAction() { return m_chosenAction.get_future(); }
-
-private:
-  bool actionIdIsValid(int32_t id) {
-    auto it = std::find(action_ids.begin(), action_ids.end(), id);
-    return it != action_ids.end();
-  }
-private:
-  std::promise<int32_t> m_chosenAction;
-};
-
+class Game;
+class IEventObserver;
 class Events {
 public:
-  explicit Events(int32_t initialMile, const char *eventJson=kEventJson);
+  explicit Events(Game &game, const char *eventJson=kEventJson);
 
-  [[nodiscard]] bool hasNextEvent() const;
-  EventModel nextEvent();
+  [[nodiscard]] EventModel &getEvent(int32_t id);
+  void handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer);
+
+  std::vector<int32_t> eventsAtMile(int32_t mile);
+  [[nodiscard]] bool hasMoreEvents(int32_t mile) const;
+
+public:
+  inline static EventModel kEmptyEventModel;
 
 private:
-  rapidjson::Document m_eventDocument;
-  int32_t m_nextEventIdx;
+  Game &m_game;
+  std::unordered_map<int32_t, EventModel> m_eventsById;
+  std::map<int32_t, std::vector<int32_t>> m_eventsByMile;
   inline static const char *kEventJson = R"JSON(
   [
     {
+      "id": 0,
       "actions": [0],
       "description": "You awaken in a bed at the Frampton Inn. You recall hearing that California King Size beds are sold in states with tall and narrow residents and traditional King Size beds are for those states with a primarily short an wide populous. Your regular King Size bed stinks of cigarettes and if the popcorn ceiling could talk it would probably plead for euthanization. You get out of bed and stumble over to the window. As you feel the crunchiness of the motel carpet beneath your feet you deem it prudent to slip into your shower shoes. A glance out the window reveals a flat wasteland. A pickup truck with a bumper sticker reading 'Boomer Sooner' confirms your suspicion that you are, indeed, in the state of Oklahoma. A peek at your phone pinpoints you at Miami, OK, a town known for its rich lead deposits. All hope is not lost as you see your bike and full touring kit on the other side of the room! While you recognize that you are fairly close to Kansas, Misouri, and Arkansas, you know your only change for deliverance is to get the fuck out of Oklahoma and escape to the great state of Texas.",
       "display_name": "Frampton Inn - Miami, OK",
       "mile": 0
     },
     {
-      "actions": [0, 1],
+      "id": 1,
+      "actions": [0, 10],
       "description": "",
       "display_name": "Like's Country Store",
       "mile": 2

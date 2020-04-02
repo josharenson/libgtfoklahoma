@@ -25,14 +25,13 @@
 
 // Local includes
 #include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/rules.hpp>
 
 using namespace libgtfoklahoma;
 
 Engine::Engine(Game &game)
 : m_running(false)
-, m_events(Events(game.mile()))
-, m_nextEvent(m_events.nextEvent())
 , m_game(game) {}
 
 Engine::~Engine() { stop(); }
@@ -59,6 +58,8 @@ void Engine::mainLoop() {
   while (m_running) {
     std::this_thread::sleep_for(rules::kTickDelayMs);
 
+
+    // Update the time
     if (!(m_game.tick() % rules::kTicksPerGameHour)) {
       auto new_hour = m_game.bumpHour();
       for (const auto &observer : m_eventObservers) {
@@ -66,31 +67,23 @@ void Engine::mainLoop() {
       }
     }
 
-    if (m_nextEvent.mile == m_game.mile()) {
-      for (const auto &observer : m_eventObservers) {
-
-        std::vector<std::reference_wrapper<ActionModel>> actions;
-        for (const auto &action_id : m_nextEvent.action_ids) {
-          actions.emplace_back(m_game.getActions()->getAction(action_id));
-        }
-
-        observer->onEvent(m_nextEvent, actions);
-        auto actionIdToPerform = m_nextEvent.chosenAction().get();
-        m_game.getActions()->performAction(actionIdToPerform, observer);
-      }
-      m_nextEvent = m_events.nextEvent();
-    }
-
     if (!ticksUntilNextMile) {
       ticksUntilNextMile = m_game.ticksUntiNextMile();
-      auto new_mile = m_game.bumpMile();
+      m_game.setCurrentMile(m_game.currentMile() + 1);
       for (const auto &observer : m_eventObservers) {
-        observer->onMileChanged(new_mile);
+        observer->onMileChanged(m_game.currentMile());
+        handleEventsAtMile(m_game.currentMile(), observer);
       }
     }
 
     m_game.bumpTick();
     ticksUntilNextMile--;
   }
+}
 
+void Engine::handleEventsAtMile(int32_t mile, const std::unique_ptr<IEventObserver> &observer) {
+  auto eventIds = m_game.getEvents()->eventsAtMile(mile);
+  for (const auto &eventId : eventIds) {
+    m_game.getEvents()->handleEvent(eventId, observer);
+  }
 }

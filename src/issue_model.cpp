@@ -15,9 +15,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#include <libgtfoklahoma/issue_model.hpp>
 
-#include <libgtfoklahoma/rules.hpp>
+using namespace libgtfoklahoma;
 
-TEST_CASE("Game", "[unit]") {}
-
+bool IssueModel::operator==(const IssueModel &rhs) const {
+  return this->id == rhs.id &&
+         this->actions == rhs.actions &&
+         this->dependent_actions == rhs.dependent_actions &&
+         this->dependent_inventory == rhs.dependent_inventory &&
+         this->description == rhs.description &&
+         this->display_name == rhs.display_name &&
+         this->image_url == rhs.image_url &&
+         this->stat_delta == rhs.stat_delta &&
+         this->type == rhs.type;
+}

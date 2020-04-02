@@ -15,6 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <event_observer.hpp>
+
 // Library includes
 #include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
@@ -22,13 +24,10 @@
 
 // System includes
 #include <iostream>
+#include <utility>
 
 // 3P includes
 #include <spdlog/spdlog.h>
-
-// Local includes
-#include <event_observer.hpp>
-#include <utility>
 
 using namespace gtfoklahoma;
 using namespace libgtfoklahoma;
@@ -57,7 +56,7 @@ void EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrappe
   while (true) {
     std::cout << "Enter a number-> ";
     std::cin >> result;
-    if (model.chooseAction(result)) {
+    if (actions.size() >= result && model.chooseAction(actions.at(result).get().id)) {
       break;
     } else {
       std::cout << "\nInvalid choice!" << std::endl;

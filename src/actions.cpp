@@ -17,9 +17,13 @@
 
 #include <libgtfoklahoma/actions.hpp>
 
+#include <utility>
+
+#include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
 
 #include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/items.hpp>
 
 using namespace libgtfoklahoma;
@@ -27,13 +31,14 @@ using namespace libgtfoklahoma;
 Actions::Actions(Game &game, const char *actionJson)
 : m_game(game) {
 
-  if (m_actionsDocument.Parse(actionJson).HasParseError() ||
-      !m_actionsDocument.IsArray()) {
+  rapidjson::Document actionsDocument;
+  if (actionsDocument.Parse(actionJson).HasParseError() ||
+      !actionsDocument.IsArray()) {
     spdlog::error("Parsing error when parsing actions json");
     abort();
   }
 
-  auto actionIsValid = [this] (const rapidjson::Value &action) {
+  auto actionIsValid = [] (const rapidjson::Value &action) {
     return action.HasMember("display_name") && action["display_name"].IsString() &&
            action.HasMember("id") && action["id"].IsInt() &&
            action.HasMember("type") && action["type"].IsArray();
@@ -63,7 +68,7 @@ Actions::Actions(Game &game, const char *actionJson)
     return type;
   };
 
-  for (const auto &action : m_actionsDocument.GetArray()) {
+  for (const auto &action : actionsDocument.GetArray()) {
     if (actionIsValid(action)) {
       ActionModel model;
       model.display_name = action["display_name"].GetString();
@@ -93,10 +98,10 @@ ActionModel &Actions::getAction(int32_t id) {
   }
 
   spdlog::warn("Requested action id {} that does not exist.", id);
-  return m_actions.at(0);
+  return kEmptyActionModel;
 }
 
-void Actions::performAction(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
+void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
   ActionModel &action = getAction(id);
   spdlog::debug("Performing action {}", id);
 

@@ -15,9 +15,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#include <libgtfoklahoma/action_model.hpp>
 
-#include <libgtfoklahoma/rules.hpp>
+using namespace libgtfoklahoma;
 
-TEST_CASE("Game", "[unit]") {}
+void ActionModel::completePurchase() {
+  m_purchasedItems.set_value(m_itemsPendingPurchase);
+}
 
+void ActionModel::purchaseItem(int32_t id_to_buy) {
+  m_itemsPendingPurchase.push_back(id_to_buy);
+}
+
+std::future<std::vector<int32_t>> ActionModel::purchasedItems() {
+  return m_purchasedItems.get_future();
+}
+bool ActionModel::operator==(const ActionModel &rhs) const {
+  return this->id == rhs.id &&
+         this->display_name == rhs.display_name &&
+         this->item_ids == rhs.item_ids &&
+         this->stat_delta == rhs.stat_delta &&
+         this->type == rhs.type;
+}

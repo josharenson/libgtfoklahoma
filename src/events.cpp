@@ -17,62 +17,84 @@
 
 #include <libgtfoklahoma/events.hpp>
 
+#include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
+
+#include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/game.hpp>
 
 using namespace libgtfoklahoma;
 using namespace rapidjson;
 
-Events::Events(const int32_t initialMile, const char *eventJson) {
-  if (m_eventDocument.Parse(eventJson).HasParseError() ||
-      !m_eventDocument.IsArray()) {
+Events::Events(Game &game, const char *eventJson)
+: m_game(game) {
+  rapidjson::Document eventDocument;
+  if (eventDocument.Parse(eventJson).HasParseError() ||
+      !eventDocument.IsArray()) {
     spdlog::error("Parsing error when parsing events json");
     abort();
   }
 
-  // Determine next event
-  for (int i = 0; i < m_eventDocument.GetArray().Size(); i++) {
-    auto array = m_eventDocument.GetArray();
-    if (array[i].IsObject() && array[i].GetObject()["mile"].IsInt() &&
-        array[i].GetObject()["mile"].GetInt() >= initialMile) {
-      m_nextEventIdx = i;
-      break;
-    }
-  }
-}
-
-bool Events::hasNextEvent() const {
-  return m_eventDocument.GetArray().Size() > m_nextEventIdx;
-}
-
-EventModel Events::nextEvent() {
-  EventModel model = {};
-  auto array = m_eventDocument.GetArray();
-
-  auto eventIsValid = [](const rapidjson::Value &event) {
-    return event["actions"].IsArray() && event["description"].IsString() &&
-           event["display_name"].IsString() && event["mile"].IsInt();// &&
-           // event["actions"].GetArray()[0].IsInt();
+  auto event_is_valid = [](const rapidjson::Value &event){
+    return event.HasMember("id") && event["id"].IsInt() &&
+           event.HasMember("actions") && event["actions"].IsArray() &&
+           event.HasMember("description") && event["description"].IsString() &&
+           event.HasMember("display_name") && event["display_name"].IsString() &&
+           event.HasMember("mile") && event["mile"].IsInt();
   };
 
-  // Out of bounds, return empty model
-  if (array.Size() <= m_nextEventIdx || !array[m_nextEventIdx].IsObject()) {
-    spdlog::error("Could not find the requested event. Index out of bounds.");
-    return model;
-  }
-
-  const auto &event = array[m_nextEventIdx];
-  if (eventIsValid(event)) {
-    for (auto &action : event["actions"].GetArray()) {
-      model.action_ids.push_back(action.GetInt());
+  auto idsFromArray = [](const rapidjson::GenericArray<true, rapidjson::Value> &arr) {
+    std::vector<int32_t> result;
+    for (const auto &id : arr) {
+      result.emplace_back(id.GetInt());
     }
+    return result;
+  };
+
+  for (const auto &event : eventDocument.GetArray()) {
+    if (!event_is_valid(event)) {
+      spdlog::warn("Parsing error while adding an event");
+      continue;
+    }
+
+    EventModel model;
+    model.id = event["id"].GetInt();
+    model.action_ids = idsFromArray(event["actions"].GetArray());
     model.description = event["description"].GetString();
     model.display_name = event["display_name"].GetString();
     model.mile = event["mile"].GetInt();
 
-    m_nextEventIdx++;
-    return model;
-  } else {
-    spdlog::error("Could not parse event #{}", m_nextEventIdx);
-    return model;
+    m_eventsByMile[model.mile].push_back(model.id);
+    m_eventsById[model.id] = std::move(model);
   }
+}
+
+// FIXME: return empty model if necessary
+EventModel &Events::getEvent(int32_t id) {
+  return m_eventsById.at(id);
+}
+
+void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
+  auto &event = getEvent(id);
+  std::vector<std::reference_wrapper<ActionModel>> actionModels;
+  for (const auto &actionId : event.action_ids) {
+    actionModels.emplace_back(m_game.getActions()->getAction(actionId));
+  }
+
+  observer->onEvent(event, actionModels);
+  auto actionId = event.chosenAction().get();
+  auto &actions = m_game.getActions();
+  actions->handleAction(actionId, observer);
+}
+
+std::vector<int32_t> Events::eventsAtMile(int32_t mile) {
+  if (m_eventsByMile.count(mile))
+    return m_eventsByMile.at(mile);
+  else
+    return {};
+}
+
+bool Events::hasMoreEvents(int32_t mile) const {
+  return m_eventsByMile.upper_bound(mile) != m_eventsByMile.end();
 }

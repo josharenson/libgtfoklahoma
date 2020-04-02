@@ -15,9 +15,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#pragma once
 
-#include <libgtfoklahoma/rules.hpp>
+#include <cstdint>
+#include <string>
+#include <vector>
 
-TEST_CASE("Game", "[unit]") {}
+#include <libgtfoklahoma/stats.hpp>
 
+namespace libgtfoklahoma {
+struct IssueModel {
+  enum class Type { INVALID, HEALTH, MECHANICAL };
+  int32_t id{-1};
+  std::vector<int32_t> actions;
+
+  // This event will only happen if all dependent actions have also happened
+  std::vector<int32_t> dependent_actions;
+
+  // This event will only happen if all dependent items are in inventory
+  std::vector<int32_t> dependent_inventory;
+  std::string description;
+  std::string display_name;
+  std::string image_url;
+  StatModel stat_delta;
+  Type type{Type::INVALID};
+
+  bool operator==(const IssueModel &rhs) const;
+};
+} // namespace libgtfoklahoma

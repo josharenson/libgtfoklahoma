@@ -15,27 +15,33 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/issues.hpp>
 
 #include <algorithm>
 #include <iterator>
 #include <random>
 
+#include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
+
+#include <libgtfoklahoma/game.hpp>
 
 using namespace libgtfoklahoma;
 
-Issues::Issues(Game &game, const char *issuesJson) : m_game(game) {
 
-  if (m_issuesDocument.Parse(issuesJson).HasParseError() ||
-      !m_issuesDocument.IsArray()) {
+Issues::Issues(Game &game, const char *issuesJson)
+: m_game(game) {
+
+  rapidjson::Document issuesDocument;
+  if (issuesDocument.Parse(issuesJson).HasParseError() ||
+      !issuesDocument.IsArray()) {
     spdlog::error("Parsing error when parsing issues json");
     abort();
   }
 
   auto issueIsValid = [](const rapidjson::Value &value) {
     return value.HasMember("id") && value["id"].IsInt() &&
+           value.HasMember("actions") && value["actions"].IsArray() &&
            value.HasMember("description") && value["description"].IsString() &&
            value.HasMember("display_name") && value["display_name"].IsString() &&
            value.HasMember("image_url") && value["image_url"].IsString() &&
@@ -57,7 +63,7 @@ Issues::Issues(Game &game, const char *issuesJson) : m_game(game) {
     return result;
   };
 
-  for (const auto &issue : m_issuesDocument.GetArray()) {
+  for (const auto &issue : issuesDocument.GetArray()) {
     if (!issueIsValid(issue)) {
       spdlog::warn("Error parsing issue type");
       continue;
@@ -92,7 +98,7 @@ Issues::Issues(Game &game, const char *issuesJson) : m_game(game) {
   }
 }
 
-std::optional<IssueModel> Issues::popRandomIssue(IssueModel::Type type) {
+IssueModel &Issues::popRandomIssue(IssueModel::Type type) {
   std::vector<int32_t> potential_issues;
 
   // Get a list of all issues of `type` that havne't happened yet
@@ -104,7 +110,7 @@ std::optional<IssueModel> Issues::popRandomIssue(IssueModel::Type type) {
   auto seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::shuffle(potential_issues.begin(), potential_issues.end(), std::default_random_engine(seed));
 
-  if (potential_issues.empty()) { return std::nullopt; }
+  if (potential_issues.empty()) { return kEmptyIssueModel; }
 
   // A valid issue exists. Mark it as having happened and apply the stat delta
   m_issuesThatHaveAlreadyHappened.insert(potential_issues[0]);

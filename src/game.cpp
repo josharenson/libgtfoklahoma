@@ -19,10 +19,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include <libgtfoklahoma/actions.hpp>
-#include <libgtfoklahoma/items.hpp>
-#include <libgtfoklahoma/issues.hpp>
-#include <libgtfoklahoma/stats.hpp>
+
 
 using namespace libgtfoklahoma;
 
@@ -31,6 +28,7 @@ Game::Game(std::string name)
 , m_currentHour(0)
 , m_currentMile(0)
 , m_currentTick(0)
+, m_events(std::make_unique<Events>(*this))
 , m_issues(std::make_unique<Issues>(*this))
 , m_items(std::make_unique<Items>())
 , m_name(std::move(name))
@@ -45,6 +43,7 @@ Game::Game(std::string name,
 , m_currentHour(0)
 , m_currentMile(0)
 , m_currentTick(0)
+, m_events(std::make_unique<Events>(*this, eventJson))
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
@@ -57,12 +56,9 @@ int32_t Game::bumpHour() {
 }
 void Game::setHour(const int32_t hour) { m_currentHour = hour; }
 
-int32_t Game::mile() const { return m_currentMile; }
-int32_t Game::bumpMile() {
-  m_currentMile++;
-  return mile();
-}
-void Game::setMile(const int32_t mile) { m_currentMile = mile; }
+int32_t Game::currentMile() const { return m_currentMile; }
+
+void Game::setCurrentMile(int32_t mile) { m_currentMile = mile; }
 
 int64_t Game::tick() const { return m_currentTick; }
 int64_t Game::bumpTick() {

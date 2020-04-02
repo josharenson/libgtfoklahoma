@@ -15,9 +15,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#pragma once
 
-#include <libgtfoklahoma/rules.hpp>
+#include <cstdint>
+#include <future>
+#include <string>
+#include <vector>
 
-TEST_CASE("Game", "[unit]") {}
+namespace libgtfoklahoma {
+struct EventModel {
+  int32_t id;
 
+  std::vector<int32_t> action_ids;
+  std::string description;
+  std::string display_name;
+  int32_t mile{-1};
+
+  bool chooseAction(int32_t actionId);
+  std::future<int32_t> chosenAction();
+
+  bool operator==(const EventModel &rhs) const;
+
+private:
+  [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
+
+private:
+  std::promise<int32_t> m_chosenAction;
+};
+} // namespace libgtfoklahoma

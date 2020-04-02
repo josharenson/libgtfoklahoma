@@ -15,9 +15,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#pragma once
 
-#include <libgtfoklahoma/rules.hpp>
+#include <cstdint>
+#include <string>
 
-TEST_CASE("Game", "[unit]") {}
+#include <libgtfoklahoma/stats.hpp>
 
+namespace libgtfoklahoma {
+struct ItemModel {
+  enum class Category { INVALID, BIKE, MISC };
+  int32_t id{-1};
+  Category category{Category::INVALID};
+  int32_t cost{-1}; // For display
+  std::string display_name;
+  std::string image_url;
+  StatModel stat_delta;
+
+  bool operator==(const ItemModel &rhs) const;
+};
+} // namespace libgtfoklahoma

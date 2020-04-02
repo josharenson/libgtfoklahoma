@@ -19,13 +19,16 @@
 
 #include <utility>
 
+#include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
 
 using namespace libgtfoklahoma;
 
 Items::Items(const char *itemsJson) {
-  if (m_itemsDocument.Parse(itemsJson).HasParseError() ||
-      !m_itemsDocument.IsArray()) {
+
+  rapidjson::Document  itemsDocument;
+  if (itemsDocument.Parse(itemsJson).HasParseError() ||
+      !itemsDocument.IsArray()) {
     spdlog::error("Error parsing items JSON");
     abort();
   }
@@ -46,7 +49,7 @@ Items::Items(const char *itemsJson) {
            item.HasMember("stat_changes") && item["stat_changes"].IsArray();
   };
 
-  for (const auto &item : m_itemsDocument.GetArray()) {
+  for (const auto &item : itemsDocument.GetArray()) {
     ItemModel model;
     if (!item_is_valid(item)) {
       spdlog::warn("Unable to parse an item! Skipping it.");
@@ -64,9 +67,10 @@ Items::Items(const char *itemsJson) {
   }
 }
 
-ItemModel Items::getItem(int32_t id) {
+ItemModel &Items::getItem(int32_t id) {
   if (m_items.count(id)) {
     return m_items[id];
   }
-  return ItemModel {};
+
+  return kEmptyItemModel;
 }

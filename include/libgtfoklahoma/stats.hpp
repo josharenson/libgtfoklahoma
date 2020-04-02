@@ -33,8 +33,8 @@ struct StatModel {
   enum class Pace {CHILL_AF, FRED, MERCKX};
 
   int32_t bedtime_hour {rules::kDefaultBedtimeHour};
-  int32_t kit_weight{0};
   int32_t health{rules::kDefaultHealth}; // When health is 0, you die
+  int32_t kit_weight{0};
   int32_t max_mph {0};
   int32_t money_remaining{rules::kDefaultMoneyRemaining};
   double odds_health_issue {rules::kDefaultOddsHealthIssue};
@@ -44,6 +44,7 @@ struct StatModel {
 
   bool operator== (const StatModel &rhs) const {
     return this->bedtime_hour == rhs.bedtime_hour &&
+           this->health == rhs.health &&
            this->kit_weight == rhs.kit_weight &&
            this->max_mph == rhs.max_mph &&
            this->money_remaining == rhs.money_remaining &&
@@ -55,6 +56,7 @@ struct StatModel {
 
   StatModel operator+ (const StatModel &rhs) {
     this->bedtime_hour += rhs.bedtime_hour;
+    this->health += rhs.health;
     this->kit_weight += rhs.kit_weight;
     this->max_mph += rhs.max_mph;
     this->money_remaining += rhs.money_remaining;

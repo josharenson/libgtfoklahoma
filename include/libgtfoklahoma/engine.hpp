@@ -22,12 +22,10 @@
 #include <thread>
 #include <vector>
 
-#include <libgtfoklahoma/actions.hpp>
-#include <libgtfoklahoma/events.hpp>
-#include <libgtfoklahoma/game.hpp>
 
 namespace libgtfoklahoma {
 
+class Game;
 class IEventObserver;
 class Engine {
 public:
@@ -39,14 +37,13 @@ public:
   void stop();
 
 private:
+  void handleEventsAtMile(int32_t mile, const std::unique_ptr<IEventObserver> &observer);
   void mainLoop();
 
 private:
   std::thread m_eventLoopThread;
   std::atomic<bool> m_running;
 
-  Events m_events;
-  EventModel m_nextEvent;
   Game &m_game;
   std::vector<std::unique_ptr<IEventObserver>> m_eventObservers;
 };

@@ -19,5 +19,18 @@
 
 #include <libgtfoklahoma/rules.hpp>
 
-TEST_CASE("Game", "[unit]") {}
+TEST_CASE("Rules", "[unit]") {
+  using namespace libgtfoklahoma::rules;
+  SECTION("RealSpeed") {
 
+    // Just sanity check my back of the napkin shit
+    auto actual_result = RealSpeed(9, 50);
+    REQUIRE(actual_result == 7);
+
+    actual_result = RealSpeed(9, 100);
+    REQUIRE(actual_result == 6);
+
+    actual_result = RealSpeed(9, 10);
+    REQUIRE(actual_result == 9);
+  }
+}

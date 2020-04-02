@@ -18,33 +18,24 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
+#include <unordered_map>
 #include <string>
 
-#include <rapidjson/document.h>
-
-#include <libgtfoklahoma/stats.hpp>
+#include <libgtfoklahoma/item_model.hpp>
 
 namespace libgtfoklahoma {
-
-struct ItemModel {
-  enum class Category {INVALID, BIKE, MISC};
-  int32_t id;
-  Category category;
-  int32_t cost; // For display
-  std::string display_name;
-  std::string image_url;
-  StatModel stat_delta;
-};
 
 class Items {
 public:
   explicit Items(const char *itemsJson=kItemsJson);
-  ItemModel getItem(int32_t id);
+  ItemModel &getItem(int32_t id);
+
+public:
+  inline static ItemModel kEmptyItemModel;
 
 private:
-  rapidjson::Document m_itemsDocument;
-  std::map<int32_t, ItemModel> m_items;
+  std::unordered_map<int32_t, ItemModel> m_items;
+
   inline static const char *kItemsJson = R"JSON(
   [
       {
@@ -66,10 +57,10 @@ private:
         "category": "MISC",
         "cost": 2,
         "display_name": "Bick Lighter",
-        "image_url: "",
+        "image_url": "",
         "stat_changes": [{}]
       }
   ]
   )JSON";
 };
-}
+} // namespace libgtfoklahoma

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <string>
 
@@ -56,13 +57,13 @@ public:
   std::unique_ptr<Events> &getEvents() { return m_events; }
   std::unique_ptr<Issues> &getIssues() { return m_issues; }
   std::unique_ptr<Items> &getItems() { return m_items; }
+  std::unique_ptr<StatModel> &getStats() { return m_stats; }
 
   void addItemToInventory(int32_t id, int32_t quantity=1);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
   [[nodiscard]] bool hasItemInInventory(int32_t id) const;
-  [[nodiscard]] std::vector<ItemModel> getInventory() const;
+  [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory() const;
 
-  std::unique_ptr<StatModel> &getStats() { return m_stats; }
   void updateStats(const StatModel &delta);
 
 private:

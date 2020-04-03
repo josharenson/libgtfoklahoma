@@ -96,11 +96,11 @@ bool Game::hasItemInInventory(int32_t id) const {
   return m_inventory.count(id);
 }
 
-std::vector<ItemModel> Game::getInventory() const {
-  std::vector<ItemModel> result;
+std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() const {
+  std::vector<std::reference_wrapper<ItemModel>> result;
   for (const auto &item : m_inventory) {
     for (int i = 0; i < item.second; i++) {
-      result.push_back(m_items->getItem(item.first));
+      result.emplace_back(m_items->getItem(item.first));
     }
   }
   return result;

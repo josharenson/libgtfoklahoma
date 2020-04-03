@@ -73,6 +73,9 @@ class Stats {
 public:
   static StatModel FromJson(const rapidjson::GenericArray<true, rapidjson::Value>& statChangesArray);
 
+public:
+  inline static StatModel kDefaultStatModel;
+
 private:
   using StatNameDeltaPair = std::pair<std::string, std::variant<int32_t, double, std::string>>;
   static StatModel FromString(const std::vector<StatNameDeltaPair>& statFields);

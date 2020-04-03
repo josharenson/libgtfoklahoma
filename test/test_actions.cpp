@@ -1,5 +1,5 @@
 /*
- * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/gtfoklahoma)
+ * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/libgtfoklahoma)
  * Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,13 @@
 #include "helpers.hpp"
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/game.hpp>
 
+using namespace libgtfoklahoma;
 using namespace testhelpers;
 
 TEST_CASE("Actions", "[unit]") {
-  using namespace libgtfoklahoma;
 
   const char *actionJson = R"(
   [
@@ -37,7 +38,7 @@ TEST_CASE("Actions", "[unit]") {
     },
     {
       "display_name": "display_name_1",
-      "id": 1,
+      "id": 10,
       "stat_changes": [
         {"bedtime_hour": 5},
         {"kit_weight": 5},
@@ -62,26 +63,40 @@ TEST_CASE("Actions", "[unit]") {
   Game game("", actionJson, validEventJson, validIssueJson, validItemJson);
   auto &actions = game.getActions();
 
-  SECTION("Get action by id works") {
-    ActionModel &model_0 = actions->getAction(0);
-    ActionModel &model_1 = actions->getAction(1);
-    REQUIRE(model_0.display_name == "display_name_0");
-    REQUIRE(model_1.display_name == "display_name_1");
+  SECTION("Action::getAction") {
+    {
+      auto &action = actions->getAction(0);
+      REQUIRE_FALSE(action == Actions::kEmptyActionModel);
+    }
+
+    {
+      auto &action = actions->getAction(-1);
+      REQUIRE(action == Actions::kEmptyActionModel);
+    }
   }
 
-  SECTION("StatModel Can parse stat changes") {
-    ActionModel &model_1 = actions->getAction(1);
-    auto stat_model = model_1.stat_delta;
-    REQUIRE(stat_model.bedtime_hour == 5);
-    REQUIRE(stat_model.kit_weight == 5);
-    REQUIRE(stat_model.max_mph == 5);
-    REQUIRE(stat_model.odds_health_issue == .5);
-    REQUIRE(stat_model.odds_mech_issue == .5);
-    REQUIRE(stat_model.pace == StatModel::Pace::MERCKX);
-    REQUIRE(stat_model.wakeup_hour == 5);
+  SECTION("Action::actionHasHappened") {
+      REQUIRE_FALSE(actions->actionHasHappened(0));
+      actions->handleAction(0, nullptr);
+      REQUIRE(actions->actionHasHappened(0));
   }
 
-  SECTION("actions types work") {
+  SECTION("Action::setActionsThatHaveAlreadyHappened") {
+      REQUIRE_FALSE(actions->actionHasHappened(0));
+      actions->setActionsThatHaveAlreadyHappened({0});
+      REQUIRE(actions->actionHasHappened(0));
+  }
+
+  SECTION("ActionModel::purchaseItem") {
+      actions->getAction(0).purchaseItem(0);
+      actions->getAction(0).completePurchase();
+      auto purchasedItems = actions->getAction(0).purchasedItems().get();
+
+      REQUIRE(purchasedItems.size());
+      REQUIRE(purchasedItems[0] == 0);
+  }
+
+  SECTION("ActionModel::is*type") {
     ActionModel &model = actions->getAction(2);
 
     REQUIRE_FALSE(model.isNoneType());

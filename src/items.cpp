@@ -1,5 +1,5 @@
 /*
- * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/gtfoklahoma)
+ * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/libgtfoklahoma)
  * Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -72,5 +72,6 @@ ItemModel &Items::getItem(int32_t id) {
     return m_items[id];
   }
 
+  spdlog::warn("Requested item id {} that does not exist.", id);
   return kEmptyItemModel;
 }

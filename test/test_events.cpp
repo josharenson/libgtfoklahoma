@@ -1,6 +1,6 @@
 /*
- * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/gtfoklahoma)
- * Copyright (c) 2020 Josh Arenson.
+ * This file is part of the libgtfoklahoma distribution
+ * (https://github.com/arenson/libgtfoklahoma) Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,49 +22,59 @@
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/game.hpp>
 
+using namespace libgtfoklahoma;
 using namespace testhelpers;
 
 TEST_CASE("Events", "[unit]") {
-using namespace libgtfoklahoma;
 
-const char *eventJson = R"(
+  const char *eventsJson = R"(
   [
     {
       "id": 0,
       "actions": [0],
-      "description": "description_0",
-      "display_name": "display_name_0",
+      "description": "A RAIN EVENT",
+      "display_name": "",
       "mile": 0
     },
     {
-      "id": 1,
-      "actions": [1],
-      "description": "description_1",
-      "display_name": "display_name_1",
-      "mile": 1
-    },
-    {
-      "id": 1,
-      "actions": [2],
-      "description": "description_2",
-      "display_name": "display_name_2",
-      "mile": 4
+      "id": 10,
+      "actions": [0],
+      "description": "ANOTHER RAIN EVENT",
+      "display_name": "",
+      "mile": 0
     }
   ]
   )";
+  Game game("", validActionJson, eventsJson, validIssueJson, validItemJson);
+  auto &events = game.getEvents();
 
-Game game("", validActionJson, eventJson, validIssueJson, validItemJson);
-auto &events = game.getEvents();
+  SECTION("Events::getEvent") {
+    {
+      auto &event = events->getEvent(0);
+      REQUIRE_FALSE(event == Events::kEmptyEventModel);
+    }
 
-// Add em'
-}
+    {
+      auto &event = events->getEvent(-1);
+      REQUIRE(event == Events::kEmptyEventModel);
+    }
+  }
 
-TEST_CASE("EventModel", "[unit]") {
-  libgtfoklahoma::EventModel model;
-  model.action_ids = {1, 2};
+  SECTION("Events::eventsAtMile") {
+    auto eventsAt0 = events->eventsAtMile(0);
 
-  SECTION("EventModel::chooseAction validates") {
-    REQUIRE(model.chooseAction(1));
-    REQUIRE_FALSE(model.chooseAction(3));
+    REQUIRE(eventsAt0.size() == 2);
+    REQUIRE(std::find(eventsAt0.begin(), eventsAt0.end(), 0) != eventsAt0.end());
+    REQUIRE(std::find(eventsAt0.begin(), eventsAt0.end(), 10) != eventsAt0.end());
+  }
+
+  SECTION("Events::hasMoreEvents") {
+    REQUIRE_FALSE(events->hasMoreEvents(1));
+  }
+
+  SECTION("EventModel::chooseAction") {
+    auto &event0 = events->getEvent(events->eventsAtMile(0)[0]);
+    event0.chooseAction(0);
+    REQUIRE(event0.chosenAction().get() == 0);
   }
 }

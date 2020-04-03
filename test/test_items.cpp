@@ -1,6 +1,6 @@
 /*
  * This file is part of the libgtfoklahoma distribution
- * (https://github.com/arenson/gtfoklahoma) Copyright (c) 2020 Josh Arenson.
+ * (https://github.com/arenson/libgtfoklahoma) Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,45 +17,38 @@
 
 #include <catch2/catch.hpp>
 
+#include "helpers.hpp"
+
+#include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/items.hpp>
 
+using namespace libgtfoklahoma;
+using namespace testhelpers;
+
 TEST_CASE("Items", "[unit]") {
-  using namespace libgtfoklahoma;
 
-  SECTION("Test Parsing") {
-    StatModel expected_stat_model;
-    expected_stat_model.kit_weight = 5;
-    expected_stat_model.max_mph = 5;
-    expected_stat_model.odds_health_issue = .5;
-    expected_stat_model.odds_mech_issue = .5;
-    expected_stat_model.pace = StatModel::Pace::MERCKX;
+  const char *itemJson = R"(
+  [
+    {
+      "id": 0,
+      "category": "BIKE",
+      "cost": 10,
+      "display_name": "",
+      "image_url": "",
+      "stat_changes": [{"max_mph": 1}]
+    }
+  ]
+  )";
 
-    const char *itemJson = R"(
-    [
-      {
-        "id": 0,
-        "category": "BIKE",
-        "cost": 42069,
-        "display_name": "Taco Item",
-        "image_url": "teapot.svg",
-        "stat_changes": [
-          {"kit_weight": 5},
-          {"max_mph": 5},
-          {"odds_health_issue": 0.5},
-          {"odds_mech_issue": 0.5},
-          {"pace": "MERCKX"}
-        ]
-      }
-    ]
-    )";
+  Game game("", validActionJson, validEventJson, validIssueJson, itemJson);
+  auto &items = game.getItems();
 
-    Items items(itemJson);
-    auto actual_item = items.getItem(0);
-    REQUIRE(actual_item.id == 0);
-    REQUIRE(actual_item.category == ItemModel::Category::BIKE);
-    REQUIRE(actual_item.cost == 42069);
-    REQUIRE(actual_item.display_name == "Taco Item");
-    REQUIRE(actual_item.image_url == "teapot.svg");
-    REQUIRE(actual_item.stat_delta == expected_stat_model);
+  SECTION("Items::getItem") {
+    auto item = items->getItem(0);
+    REQUIRE_FALSE(item == Items::kEmptyItemModel);
+
+    item = items->getItem(-1);
+    REQUIRE(item == Items::kEmptyItemModel);
   }
+
 }

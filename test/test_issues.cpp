@@ -1,6 +1,6 @@
 /*
  * This file is part of the libgtfoklahoma distribution
- * (https://github.com/arenson/gtfoklahoma) Copyright (c) 2020 Josh Arenson.
+ * (https://github.com/arenson/libgtfoklahoma) Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,146 +23,68 @@
 #include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/issues.hpp>
 
+using namespace libgtfoklahoma;
 using namespace testhelpers;
 
 TEST_CASE("Issues", "[unit]") {
-  using namespace libgtfoklahoma;
 
-  SECTION("Test issues public api") {
-    const char *bare_minimum_issue = R"([{
-        "id": 1,
-        "actions": [0],
-        "description": "description",
-        "display_name": "display_name",
-        "image_url": "image_url",
-        "type": "HEALTH"
-      }])";
-    Game game("", validActionJson, validEventJson, bare_minimum_issue, validItemJson);
+  const char *issuesJson = R"(
+  [
+    {
+      "id": 0,
+      "actions": [0],
+      "description": "HEALTH ISSUE",
+      "display_name": "",
+      "image_url": "",
+      "type": "HEALTH"
+    },
+    {
+      "id": 10,
+      "actions": [0],
+      "description": "MECHANICAL ISSUE",
+      "display_name": "",
+      "dependent_inventory": [0],
+      "image_url": "",
+      "stat_changes": [{"max_mph": 1}],
+      "type": "MECHANICAL"
+    }
+  ]
+  )";
 
-    // No issues have happened yet
-    auto &issues = game.getIssues();
-    REQUIRE(issues->getIssuesThatHaveAlreadyHappened().empty());
+  Game game("", validActionJson, validEventJson, issuesJson, validItemJson);
+  auto &issues = game.getIssues();
 
-    // Mechanical issues are empty
-    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == Issues::kEmptyIssueModel);
+  SECTION("Issues::popRandomIssue") {
+    // This isn't random because there is only one of each type
+    auto issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
+    REQUIRE(issue.description == "HEALTH ISSUE");
 
-    // Health issue is the expected
-    auto &health_issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
-    REQUIRE_FALSE(health_issue == Issues::kEmptyIssueModel);
-    REQUIRE(health_issue.id == 1);
-    REQUIRE(health_issue.description == "description");
-    REQUIRE(health_issue.display_name == "display_name");
-    REQUIRE(health_issue.image_url == "image_url");
-    REQUIRE(health_issue.type == IssueModel::Type::HEALTH);
+    // Issue can't be served again
+    issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
+    REQUIRE(issue == Issues::kEmptyIssueModel);
 
-    // Issue was prevented from happening again
-    health_issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
-    REQUIRE(health_issue == Issues::kEmptyIssueModel);
-  }
-
-  SECTION("Dependent actions work") {
-    const char *action = R"(
-    [
-      {
-        "id": 0,
-        "display_name": "",
-        "type": ["NONE"]
-      }
-    ]
-    )";
-
-    const char *issue = R"(
-    [
-      {
-        "id": 0,
-        "actions": [0],
-        "dependent_actions": [0],
-        "description": "",
-        "display_name": "",
-        "image_url": "",
-        "type": "MECHANICAL"
-      }
-    ]
-    )";
-    Game game("", action, validEventJson, issue, validItemJson);
-    auto &issues = game.getIssues();
-
-    // There should initially be no mechanical issues available
-    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == Issues::kEmptyIssueModel);
-
-    // Perform the dependent action
+    // Dependent actions and inventory work
+    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
+    REQUIRE(issue == Issues::kEmptyIssueModel);
     game.getActions()->handleAction(0, nullptr);
 
-    // Issue should be available now
-    REQUIRE_FALSE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == Issues::kEmptyIssueModel);
-  }
+    // Should still be empty as inventory requirments aren't met
+    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
+    REQUIRE(issue == Issues::kEmptyIssueModel);
 
-  SECTION("Dependent items work") {
-
-    const char *issue = R"(
-    [
-      {
-        "id": 0,
-        "actions": [0],
-        "dependent_inventory": [0],
-        "description": "",
-        "display_name": "",
-        "image_url": "",
-        "type": "MECHANICAL"
-      }
-    ]
-    )";
-
-    const char *item = R"(
-    [
-      {
-        "id": 0,
-        "category": "MISC",
-        "cost": 0,
-        "display_name": "",
-        "image_url": "",
-        "type": ["NONE"]
-      }
-    ]
-    )";
-
-    Game game("", validActionJson, validEventJson, issue, item);
-
-    auto &issues = game.getIssues();
-
-    // There should initially be no mechanical issues available
-    REQUIRE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == Issues::kEmptyIssueModel);
-
-    // Acquire the item
+    // NOW we should get the issue as all requirments have been met
     game.addItemToInventory(0);
-
-    // Issue should be available now
-    REQUIRE_FALSE(issues->popRandomIssue(IssueModel::Type::MECHANICAL) == Issues::kEmptyIssueModel);
-  }
-
-  SECTION("Issue stat changes work") {
-    const char *issueJson = R"(
-    [
-      {
-        "id": 0,
-        "actions": [0],
-        "description": "",
-        "display_name": "",
-        "image_url": "",
-        "stat_changes": [
-          {"max_mph": -1}
-        ],
-        "type": "MECHANICAL"
-      }
-    ]
-    )";
-
-    Game game("", validActionJson, validEventJson, issueJson, validItemJson);
-    auto initial_max_mph = game.getStats()->max_mph;
-
-    // Popping the only issue should apply the stat delta
-    auto issue = game.getIssues()->popRandomIssue(IssueModel::Type::MECHANICAL);
+    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
     REQUIRE_FALSE(issue == Issues::kEmptyIssueModel);
-    REQUIRE(game.getStats()->max_mph == initial_max_mph - 1);
   }
+
+  SECTION("Issues::getIssuesThatHaveAlreadyHappened") {
+    auto haveHappened = issues->getIssuesThatHaveAlreadyHappened();
+    REQUIRE(haveHappened.empty());
+
+    auto _ = issues->popRandomIssue(IssueModel::Type::HEALTH);
+    haveHappened = issues->getIssuesThatHaveAlreadyHappened();
+    REQUIRE(haveHappened.count(0));
+  }
+
 }

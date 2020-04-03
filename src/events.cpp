@@ -1,5 +1,5 @@
 /*
- * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/gtfoklahoma)
+ * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/libgtfoklahoma)
  * Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -72,7 +72,12 @@ Events::Events(Game &game, const char *eventJson)
 
 // FIXME: return empty model if necessary
 EventModel &Events::getEvent(int32_t id) {
-  return m_eventsById.at(id);
+  if (m_eventsById.count(id)) {
+    return m_eventsById.at(id);
+  }
+
+  spdlog::warn("Requested event id {} that does not exist.", id);
+  return kEmptyEventModel;
 }
 
 void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer) {

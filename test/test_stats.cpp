@@ -1,5 +1,5 @@
 /*
- * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/gtfoklahoma)
+ * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/libgtfoklahoma)
  * Copyright (c) 2020 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,41 +20,11 @@
 #include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/stats.hpp>
 
+using namespace libgtfoklahoma;
+
 TEST_CASE("Stats", "[unit]") {
-  using namespace libgtfoklahoma;
 
-  SECTION("updateStats") {
-    Game game("");
-    StatModel stats_delta;
-    stats_delta.bedtime_hour = 5;
-    stats_delta.kit_weight = 5;
-    stats_delta.max_mph = 5;
-    stats_delta.odds_health_issue = .5;
-    stats_delta.odds_mech_issue = .5;
-    stats_delta.pace = StatModel::Pace::MERCKX;
-    stats_delta.wakeup_hour = 5;
-
-    auto &initial_stats = game.getStats();
-    auto initial_bedtime_hour = initial_stats->bedtime_hour;
-    auto initial_kit_weight = initial_stats->kit_weight;
-    auto initial_max_mph = initial_stats->max_mph;
-    auto initial_odds_health_issue = initial_stats->odds_health_issue;
-    auto initial_odds_mech_issue = initial_stats->odds_mech_issue;
-    auto initial_wakeup_hour = initial_stats->wakeup_hour;
-
-    game.updateStats(stats_delta);
-    auto &updated_stats = game.getStats();
-
-    REQUIRE(updated_stats->bedtime_hour == initial_bedtime_hour + 5);
-    REQUIRE(updated_stats->kit_weight == initial_kit_weight + 5);
-    REQUIRE(updated_stats->max_mph == initial_max_mph + 5);
-    REQUIRE(updated_stats->odds_health_issue == initial_odds_health_issue + .5);
-    REQUIRE(updated_stats->odds_mech_issue == initial_odds_mech_issue + .5);
-    REQUIRE(updated_stats->pace == StatModel::Pace::MERCKX);
-    REQUIRE(updated_stats->wakeup_hour == initial_wakeup_hour + 5);
-  }
-
-  SECTION("Test +") {
+  SECTION("StatModel::operater+") {
     StatModel lhs;
     lhs.bedtime_hour = 0;
     lhs.kit_weight = 0;

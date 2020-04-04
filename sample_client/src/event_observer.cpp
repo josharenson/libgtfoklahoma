@@ -20,6 +20,7 @@
 // Library includes
 #include <libgtfoklahoma/actions.hpp>
 #include <libgtfoklahoma/events.hpp>
+#include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/items.hpp>
 
 // System includes
@@ -32,6 +33,9 @@
 using namespace gtfoklahoma;
 using namespace libgtfoklahoma;
 
+EventObserver::EventObserver(Game &game)
+: IEventObserver(game) {}
+
 void EventObserver::onHourChanged(int32_t hour) {
   spdlog::debug("Current hour is {}", hour);
 }
@@ -40,15 +44,18 @@ void EventObserver::onMileChanged(int32_t mile) {
   spdlog::debug("Current mile is {}", mile);
 }
 
-bool EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) {
-  spdlog::debug("POI Encountered-> " + model.display_name);
+bool EventObserver::onEvent(EventModel &event) {
+  spdlog::debug("POI Encountered-> " + event.display_name);
   int32_t result;
 
-  std::cout << "Welcome to " + model.display_name << std::endl;
+  std::cout << "Welcome to " + event.display_name << std::endl;
 
-  int choice = 0;
-  for (const auto &action :actions) {
-    std::cout << "\t" + std::to_string(choice) + ". " + action.get().display_name
+  int32_t choice = 0;
+  auto actionIds = event.action_ids;
+  for (const auto &actionId :actionIds) {
+    auto &action = m_game.getActions()->getAction(actionId);
+
+    std::cout << "\t" + std::to_string(choice) + ". " + action.display_name
     << std::endl;
     choice++;
   }
@@ -56,7 +63,7 @@ bool EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrappe
   while (true) {
     std::cout << "Enter a number-> ";
     std::cin >> result;
-    if (actions.size() >= result && model.chooseAction(actions.at(result).get().id)) {
+    if (actionIds.size() >= result && event.chooseAction(actionIds.at(result))) {
       break;
     } else {
       std::cout << "\nInvalid choice!" << std::endl;
@@ -66,12 +73,40 @@ bool EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrappe
   return true;
 }
 
-bool EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) {
+bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
+  spdlog::debug("Issue {} occurred", issue.id);
+  std::cout << issue.display_name << std::endl;
+
+  auto actionIds = issue.actions;
+  int32_t choice = 0;
+  for (const auto &actionId : actionIds) {
+    auto &action = m_game.getActions()->getAction(actionId);
+    std::cout << "\t" + std::to_string(choice) + ". " + action.display_name
+              << std::endl;
+    choice++;
+  }
+
+  int32_t result;
+  while (true) {
+    std::cout << "Enter a number-> ";
+    std::cin >> result;
+    if (actionIds.size() >= result && issue.chooseAction(actionIds[result])) {
+      break;
+    } else {
+      std::cout << "\nInvalid choice!" << std::endl;
+    }
+  }
+  return true;
+}
+
+bool EventObserver::onStoreEntered(ActionModel &action) {
   spdlog::debug("Entered a store!");
   std::cout << "Items available: \n";
 
-  int choice = 0;
-  for (const auto &item : items) {
+  int32_t choice = 0;
+  auto itemIds = action.item_ids;
+  for (const auto &itemId : itemIds) {
+    auto &item = m_game.getItems()->getItem(itemId);
     std::cout << "\t" + std::to_string(choice) + ". " +
     item.display_name << std::endl;
     choice++;
@@ -88,7 +123,7 @@ bool EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklaho
     if (result == choice) {
       break;
     } else if (result < choice) {
-      action.purchaseItem(items[result].id);
+      action.purchaseItem(itemIds[result]);
     } else {
       std::cout << "\nInvalid choice!" << std::endl;
     }

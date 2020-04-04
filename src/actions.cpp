@@ -110,11 +110,7 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
   }
 
   if (action.isStoreType()) {
-    std::vector<ItemModel> items;
-    for (const auto &item_id : action.item_ids) {
-      items.emplace_back(m_game.getItems()->getItem(item_id));
-    }
-    observer->onStoreEntered(action, items);
+    observer->onStoreEntered(action);
     auto purchasedItems = action.purchasedItems().get();
 
     // Add purchased items to inventory.. Client should validate item prices

@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   libgtfoklahoma::Game game("");
   auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
-  auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>();
+  auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>(game);
   engine->registerEventObserver(std::move(eventObserver));
   engine->start();
 

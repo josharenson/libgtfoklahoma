@@ -86,7 +86,7 @@ void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &obse
     actionModels.emplace_back(m_game.getActions()->getAction(actionId));
   }
 
-  bool blockUntilResponse = observer->onEvent(event, actionModels);
+  bool blockUntilResponse = observer->onEvent(event);
   if (blockUntilResponse) {
     auto actionId = event.chosenAction().get();
     auto &actions = m_game.getActions();

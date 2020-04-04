@@ -22,6 +22,8 @@
 namespace libgtfoklahoma {
 struct ActionModel;
 struct EventModel;
+class Game;
+struct IssueModel;
 struct ItemModel;
 }
 namespace gtfoklahoma {
@@ -29,11 +31,13 @@ namespace gtfoklahoma {
 class EventObserver : public libgtfoklahoma::IEventObserver {
 public:
 
+  explicit EventObserver(libgtfoklahoma::Game &game);
   ~EventObserver() override = default;
 
   void onHourChanged(int32_t hour) override;
   void onMileChanged(int32_t mile) override;
-  bool onEvent(libgtfoklahoma::EventModel &model, std::vector<std::reference_wrapper<libgtfoklahoma::ActionModel>> &actions) override;
-  bool onStoreEntered(libgtfoklahoma::ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) override;
+  bool onEvent(libgtfoklahoma::EventModel &event) override;
+  bool onIssueOccurred(libgtfoklahoma::IssueModel &issue) override;
+  bool onStoreEntered(libgtfoklahoma::ActionModel &action) override;
 };
 } // namespace gtfoklahoma

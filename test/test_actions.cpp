@@ -155,7 +155,7 @@ TEST_CASE("Actions - Store Type Actions") {
     auto initial_money = game.getStats()->money_remaining;
 
     // Tell the mock to purchase the item
-    When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action, std::vector<ItemModel> &items){
+    When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action){
       action.purchaseItem(0);
       action.completePurchase();
       return true;

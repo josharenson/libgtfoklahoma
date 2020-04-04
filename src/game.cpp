@@ -25,16 +25,13 @@ using namespace libgtfoklahoma;
 class InternalObserver : public IEventObserver {
 public:
     explicit InternalObserver(Game &game)
-    : m_game(game) {}
+    : IEventObserver(game) {}
 
     void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
     void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
-    bool onEvent(EventModel&, std::vector<std::reference_wrapper<ActionModel>>&) override { return false; }
+    bool onEvent(EventModel&) override { return false; }
     bool onIssueOccurred(IssueModel &issue) override { return false; }
-    bool onStoreEntered(ActionModel&, std::vector<ItemModel>&) override { return false; }
-
-  private:
-    Game &m_game;
+    bool onStoreEntered(ActionModel&) override { return false; }
 };
 
 Game::Game(std::string name)

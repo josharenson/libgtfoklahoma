@@ -28,11 +28,15 @@ namespace libgtfoklahoma {
 class ActionModel;
 class Engine;
 struct EventModel;
+class Game;
 struct IssueModel;
 struct ItemModel;
 
 class IEventObserver {
 public:
+
+  explicit IEventObserver(Game &game)
+  : m_game(game){}
 
   virtual ~IEventObserver() = default;
 
@@ -47,18 +51,27 @@ public:
    */
   virtual void onMileChanged(int32_t mile) = 0;
 
-  /*
-   * @param model A reference to the model describing the point of interest.
-   * @returns bool true if the engine should block the event loop until a
-   * response has been recorded, false if the signal should be ignored
+  /**
+   * @param event A reference to the model describing the point of interest.
+   * @return true if this observer is responsible for handling this action
    */
-  virtual bool onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) = 0;
+  virtual bool onEvent(EventModel &event) = 0;
 
-  virtual bool onIssueOccurred(IssueModel &model) = 0;
-
-  /*
-   * @param models A vector of items available in the store
+  /**
+   *
+   * @param issue - A reference to the IssueModel that occurred
+   * @return true if this observer is responsible for handling this action
    */
-  virtual bool onStoreEntered(ActionModel &action, std::vector<ItemModel> &items) = 0;
+  virtual bool onIssueOccurred(IssueModel &issue) = 0;
+
+  /**
+   *
+   * @param action - A referene to the action that triggered entering the store
+   * @return true if this observer is responsible for handling this action
+   */
+  virtual bool onStoreEntered(ActionModel &action) = 0;
+
+protected:
+  Game &m_game;
 };
 }

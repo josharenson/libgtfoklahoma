@@ -70,7 +70,6 @@ Events::Events(Game &game, const char *eventJson)
   }
 }
 
-// FIXME: return empty model if necessary
 EventModel &Events::getEvent(int32_t id) {
   if (m_eventsById.count(id)) {
     return m_eventsById.at(id);
@@ -87,10 +86,12 @@ void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &obse
     actionModels.emplace_back(m_game.getActions()->getAction(actionId));
   }
 
-  observer->onEvent(event, actionModels);
-  auto actionId = event.chosenAction().get();
-  auto &actions = m_game.getActions();
-  actions->handleAction(actionId, observer);
+  bool blockUntilResponse = observer->onEvent(event, actionModels);
+  if (blockUntilResponse) {
+    auto actionId = event.chosenAction().get();
+    auto &actions = m_game.getActions();
+    actions->handleAction(actionId, observer);
+  }
 }
 
 std::vector<int32_t> Events::eventsAtMile(int32_t mile) {

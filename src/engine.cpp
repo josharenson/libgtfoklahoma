@@ -31,8 +31,10 @@
 using namespace libgtfoklahoma;
 
 Engine::Engine(Game &game)
-: m_running(false)
-, m_game(game) {}
+  : m_running(false)
+  , m_game(game) {
+  registerEventObserver(m_game.getInternalObserver());
+}
 
 Engine::~Engine() { stop(); }
 
@@ -53,37 +55,45 @@ void Engine::stop() {
 }
 
 void Engine::mainLoop() {
-  int32_t ticksUntilNextMile = m_game.ticksUntiNextMile();
+  bool mileHasChanged = true;
+  uint32_t tick = 0;
+  int32_t ticksUntilNextMile = rules::TicksUntilNextMile(*m_game.getStats());
 
   while (m_running) {
     std::this_thread::sleep_for(rules::kTickDelayMs);
 
+    // Handle queued events ensuring that this is only called once per mile
+    if (mileHasChanged) {
+      for (const auto &observer : m_eventObservers) {
+        for (const auto &id : m_game.getQueuedEventIds()) {
+          m_game.getEvents()->handleEvent(id, observer);
+        }
+      }
+      mileHasChanged = false;
+    }
 
     // Update the time
-    if (!(m_game.tick() % rules::kTicksPerGameHour)) {
-      auto new_hour = m_game.bumpHour();
+    if (!(tick % rules::kTicksPerGameHour)) {
+      auto new_hour = getNextHour();
       for (const auto &observer : m_eventObservers) {
         observer->onHourChanged(new_hour);
       }
     }
 
     if (!ticksUntilNextMile) {
-      ticksUntilNextMile = m_game.ticksUntiNextMile();
-      m_game.setCurrentMile(m_game.currentMile() + 1);
+      ticksUntilNextMile = rules::TicksUntilNextMile(*m_game.getStats());
+      auto new_mile = m_game.getCurrentMile() + 1;
       for (const auto &observer : m_eventObservers) {
-        observer->onMileChanged(m_game.currentMile());
-        handleEventsAtMile(m_game.currentMile(), observer);
+        observer->onMileChanged(new_mile);
       }
+      mileHasChanged = true;
     }
 
-    m_game.bumpTick();
+    tick++;
     ticksUntilNextMile--;
   }
 }
 
-void Engine::handleEventsAtMile(int32_t mile, const std::unique_ptr<IEventObserver> &observer) {
-  auto eventIds = m_game.getEvents()->eventsAtMile(mile);
-  for (const auto &eventId : eventIds) {
-    m_game.getEvents()->handleEvent(eventId, observer);
-  }
+int32_t Engine::getNextHour() const {
+  return (m_game.getCurrentHour() + 1) % 24;
 }

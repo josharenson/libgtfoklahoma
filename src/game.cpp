@@ -19,16 +19,29 @@
 
 #include <spdlog/spdlog.h>
 
-
-
 using namespace libgtfoklahoma;
+
+// We need our own observer to keep track of certain changes
+class InternalObserver : public IEventObserver {
+public:
+    explicit InternalObserver(Game &game)
+    : m_game(game) {}
+
+    void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
+    void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
+    bool onEvent(EventModel&, std::vector<std::reference_wrapper<ActionModel>>&) override { return false; }
+    bool onStoreEntered(ActionModel&, std::vector<ItemModel>&) override { return false; }
+
+  private:
+    Game &m_game;
+};
 
 Game::Game(std::string name)
 : m_actions(std::make_unique<Actions>(*this))
 , m_currentHour(0)
 , m_currentMile(0)
-, m_currentTick(0)
 , m_events(std::make_unique<Events>(*this))
+, m_internalObserver(std::make_unique<InternalObserver>(*this))
 , m_issues(std::make_unique<Issues>(*this))
 , m_items(std::make_unique<Items>())
 , m_name(std::move(name))
@@ -42,35 +55,38 @@ Game::Game(std::string name,
 : m_actions(std::make_unique<Actions>(*this, actionJson))
 , m_currentHour(0)
 , m_currentMile(0)
-, m_currentTick(0)
 , m_events(std::make_unique<Events>(*this, eventJson))
+, m_internalObserver(std::make_unique<InternalObserver>(*this))
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
 , m_stats(std::make_unique<StatModel>()) {}
 
-int32_t Game::hour() const { return m_currentHour % 24; }
-int32_t Game::bumpHour() {
-  m_currentHour++;
-  return hour();
-}
-void Game::setHour(const int32_t hour) { m_currentHour = hour; }
+/** Access game components */
+std::unique_ptr<Actions> &Game::getActions() { return m_actions; }
+std::unique_ptr<Events> &Game::getEvents() { return m_events; }
+std::unique_ptr<Issues> &Game::getIssues() { return m_issues; }
+std::unique_ptr<Items> &Game::getItems() { return m_items; }
+std::unique_ptr<StatModel> &Game::getStats() { return m_stats; }
 
-int32_t Game::currentMile() const { return m_currentMile; }
+/** Distance management */
+int32_t Game::getCurrentMile() const { return m_currentMile; }
+void Game::setCurrentMile(const int32_t mile) { m_currentMile = mile; }
 
-void Game::setCurrentMile(int32_t mile) { m_currentMile = mile; }
-
-int64_t Game::tick() const { return m_currentTick; }
-int64_t Game::bumpTick() {
-  m_currentTick++;
-  return tick();
-}
-void Game::setTick(const int64_t tick) { m_currentTick = tick; }
-
-int32_t Game::ticksUntiNextMile() const {
-  return 5;
+/** Event management */
+std::vector<int32_t> Game::getQueuedEventIds() const {
+ return m_events->eventsAtMile(m_currentMile);
 }
 
+/** Internal bits */
+// Engine needs to notify Game about events, but if Game had a reference to Engine to
+// do this itself, there would be a circular dependency. This provides Engine a
+// mechanism to register the internal observer itself.
+std::unique_ptr<IEventObserver> Game::getInternalObserver() {
+  return std::move(m_internalObserver);
+}
+
+/** Inventory management */
 void Game::addItemToInventory(int32_t id, int32_t quantity) {
   if (m_inventory.count(id)) {
     m_inventory[id] += quantity;
@@ -106,7 +122,10 @@ std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() const {
   return result;
 }
 
-void Game::updateStats(const StatModel &delta) {
-  *m_stats = *m_stats + delta;
-}
+/** Stats managememt */
+void Game::updateStats(const StatModel &delta) { *m_stats = *m_stats + delta; }
+
+/** Time management */
+int32_t Game::getCurrentHour() const { return m_currentHour; }
+void Game::setCurrentHour(int32_t hour) { m_currentHour = hour; }
 

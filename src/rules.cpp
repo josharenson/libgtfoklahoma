@@ -15,37 +15,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Framework includes
-#include <catch2/catch.hpp>
-
-// Helper includes
-#include <libgtfoklahoma/stats.hpp>
-
-// Includes under test
 #include <libgtfoklahoma/rules.hpp>
+
+#include <cmath>
+
+#include <libgtfoklahoma/stats.hpp>
 
 using namespace libgtfoklahoma;
 using namespace libgtfoklahoma::rules;
 
-TEST_CASE("Rules", "[unit]") {
-  StatModel stats;
+int32_t libgtfoklahoma::rules::RealSpeed(const StatModel &stats) {
+  return round(stats.max_mph * exp(-kWeightLambda * stats.kit_weight));
+}
 
-  SECTION("rules::RealSpeed") {
-
-    // Just sanity check my back of the napkin shit
-    stats.kit_weight = 50;
-    stats.max_mph = 9;
-    auto actual_result = RealSpeed(stats);
-    REQUIRE(actual_result == 7);
-
-    stats.kit_weight = 100;
-    stats.max_mph = 9;
-    actual_result = RealSpeed(stats);
-    REQUIRE(actual_result == 6);
-
-    stats.kit_weight = 10;
-    stats.max_mph = 9;
-    actual_result = RealSpeed(stats);
-    REQUIRE(actual_result == 9);
-  }
+int32_t libgtfoklahoma::rules::TicksUntilNextMile(const StatModel &stats) {
+  return kTicksPerGameHour / RealSpeed(stats);
 }

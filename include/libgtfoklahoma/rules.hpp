@@ -18,14 +18,16 @@
 #pragma once
 
 #include <chrono>
-#include <cmath>
 #include <cstdint>
 
+namespace libgtfoklahoma {
+class StatModel;
+}
 namespace libgtfoklahoma::rules {
 
 #pragma mark - Engine Ticks
-const int32_t kTicksPerGameHour = 2;
-const int32_t kTicksPerRealSecond = 2;
+const int32_t kTicksPerGameHour = 120;
+const int32_t kTicksPerRealSecond = 60;
 constexpr auto kTickDelayMs =
     std::chrono::milliseconds(1000 / kTicksPerRealSecond);
 
@@ -44,7 +46,6 @@ const double kDefaultOddsMechanicalIssue = 0.4;
  * Real Speed = Max Speed * e^(-lambda * Kit Weight)
  */
 const double kWeightLambda = 0.004;
-static int32_t RealSpeed(int32_t maxMph, int32_t kitWeight) {
-  return round(maxMph * exp(-kWeightLambda * kitWeight));
-}
-} // namespace libgtfoklahoma
+int32_t RealSpeed(const libgtfoklahoma::StatModel &stats);
+int32_t TicksUntilNextMile(const libgtfoklahoma::StatModel &stats);
+} // namespace libgtfoklahoma::rules

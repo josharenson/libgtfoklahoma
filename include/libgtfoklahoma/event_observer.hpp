@@ -29,6 +29,7 @@ class ActionModel;
 class Engine;
 struct EventModel;
 struct ItemModel;
+
 class IEventObserver {
 public:
 
@@ -47,12 +48,14 @@ public:
 
   /*
    * @param model A reference to the model describing the point of interest.
+   * @returns bool true if the engine should block the event loop until a
+   * response has been recorded, false if the signal should be ignored
    */
-  virtual void onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) = 0;
+  virtual bool onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) = 0;
 
   /*
    * @param models A vector of items available in the store
    */
-  virtual void onStoreEntered(ActionModel &action, std::vector<ItemModel> &items) = 0;
+  virtual bool onStoreEntered(ActionModel &action, std::vector<ItemModel> &items) = 0;
 };
 }

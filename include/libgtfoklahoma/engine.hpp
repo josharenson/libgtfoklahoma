@@ -37,6 +37,7 @@ public:
   void stop();
 
 private:
+  int32_t getNextHour() const;
   void handleEventsAtMile(int32_t mile, const std::unique_ptr<IEventObserver> &observer);
   void mainLoop();
 

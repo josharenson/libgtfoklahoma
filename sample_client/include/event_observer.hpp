@@ -33,7 +33,7 @@ public:
 
   void onHourChanged(int32_t hour) override;
   void onMileChanged(int32_t mile) override;
-  void onEvent(libgtfoklahoma::EventModel &model, std::vector<std::reference_wrapper<libgtfoklahoma::ActionModel>> &actions) override;
-  void onStoreEntered(libgtfoklahoma::ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) override;
+  bool onEvent(libgtfoklahoma::EventModel &model, std::vector<std::reference_wrapper<libgtfoklahoma::ActionModel>> &actions) override;
+  bool onStoreEntered(libgtfoklahoma::ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) override;
 };
 } // namespace gtfoklahoma

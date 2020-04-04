@@ -23,6 +23,7 @@
 #include <string>
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/issues.hpp>
 #include <libgtfoklahoma/items.hpp>
@@ -39,39 +40,42 @@ public:
                 const char *issueJson,
                 const char *itemJson);
 
-  [[nodiscard]] int32_t hour() const;
-  int32_t bumpHour();
-  void setHour(int32_t hour);
+  // Access game components
+  std::unique_ptr<Actions> &getActions();
+  std::unique_ptr<Events> &getEvents();
+  std::unique_ptr<Issues> &getIssues();
+  std::unique_ptr<Items> &getItems();
+  std::unique_ptr<StatModel> &getStats();
 
-  [[nodiscard]] int32_t currentMile() const;
+  // Distance management
+  [[nodiscard]] int32_t getCurrentMile() const;
   void setCurrentMile(int32_t mile);
 
-  [[nodiscard]] int64_t tick() const;
-  int64_t bumpTick();
-  void setTick(int64_t tick);
+  // Event management
+  [[nodiscard]] std::vector<int32_t> getQueuedEventIds() const;
 
-  // TODO: Make dynamic based on stats
-  [[nodiscard]] int32_t ticksUntiNextMile() const;
+  // Internal bits
+  std::unique_ptr<IEventObserver> getInternalObserver();
 
-  std::unique_ptr<Actions> &getActions() { return m_actions; }
-  std::unique_ptr<Events> &getEvents() { return m_events; }
-  std::unique_ptr<Issues> &getIssues() { return m_issues; }
-  std::unique_ptr<Items> &getItems() { return m_items; }
-  std::unique_ptr<StatModel> &getStats() { return m_stats; }
-
+  // Inventory management
   void addItemToInventory(int32_t id, int32_t quantity=1);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
   [[nodiscard]] bool hasItemInInventory(int32_t id) const;
   [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory() const;
 
+  // Stat managmeent
   void updateStats(const StatModel &delta);
+
+  // Time management
+  [[nodiscard]] int32_t getCurrentHour() const;
+  void setCurrentHour(int32_t hour);
 
 private:
   std::unique_ptr<Actions> m_actions;
   int32_t m_currentHour;
   int32_t m_currentMile;
-  int64_t m_currentTick;
   std::unique_ptr<Events> m_events;
+  std::unique_ptr<IEventObserver> m_internalObserver;
   std::map<int32_t, int32_t> m_inventory;
   std::unique_ptr<Items> m_items;
   std::unique_ptr<Issues> m_issues;

@@ -33,14 +33,14 @@ using namespace gtfoklahoma;
 using namespace libgtfoklahoma;
 
 void EventObserver::onHourChanged(int32_t hour) {
-  spdlog::debug("Current hour is " + std::to_string(hour));
+  spdlog::debug("Current hour is {}", hour);
 }
 
 void EventObserver::onMileChanged(int32_t mile) {
-
+  spdlog::debug("Current mile is {}", mile);
 }
 
-void EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) {
+bool EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) {
   spdlog::debug("POI Encountered-> " + model.display_name);
   int32_t result;
 
@@ -62,9 +62,11 @@ void EventObserver::onEvent(EventModel &model, std::vector<std::reference_wrappe
       std::cout << "\nInvalid choice!" << std::endl;
     }
   }
+
+  return true;
 }
 
-void EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) {
+bool EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklahoma::ItemModel> &items) {
   spdlog::debug("Entered a store!");
   std::cout << "Items available: \n";
 
@@ -92,5 +94,7 @@ void EventObserver::onStoreEntered(ActionModel &action, std::vector<libgtfoklaho
     }
   }
   action.completePurchase();
+
+  return true;
 }
 

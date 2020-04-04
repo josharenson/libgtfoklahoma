@@ -24,6 +24,7 @@
 #include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
 
+#include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/game.hpp>
 
 using namespace libgtfoklahoma;
@@ -98,10 +99,39 @@ Issues::Issues(Game &game, const char *issuesJson)
   }
 }
 
-IssueModel &Issues::popRandomIssue(IssueModel::Type type) {
+IssueModel &Issues::getIssue(int32_t id) {
+  if (m_issuesById.count(id)) {
+    return m_issuesById[id];
+  }
+
+  spdlog::warn("Requested issue id {} that does not exist.", id);
+  return kEmptyIssueModel;
+}
+
+void Issues::handleIssue(int32_t issueId, const std::unique_ptr<IEventObserver> &observer) {
+  IssueModel &issue = getIssue(issueId);
+  spdlog::debug("Handling issue {}", issueId);
+
+  std::vector<std::reference_wrapper<ActionModel>> actionModels;
+  for (const auto &actionId : issue.actions) {
+    actionModels.emplace_back(m_game.getActions()->getAction(actionId));
+  }
+
+  bool shouldHandle = observer ? observer->onIssueOccurred(issue) : false;
+  if (shouldHandle) {
+    auto actionId = issue.chosenAction().get();
+    m_game.getActions()->handleAction(actionId, observer);
+  }
+
+  // A valid issue exists. Mark it as having happened and apply the stat delta
+  m_issuesThatHaveAlreadyHappened.insert(issueId);
+  m_game.updateStats(issue.stat_delta);
+}
+
+int32_t Issues::popRandomIssueId(IssueModel::Type type) {
   std::vector<int32_t> potential_issues;
 
-  // Get a list of all issues of `type` that havne't happened yet
+  // Get a list of all issues of `type` that haven't happened yet
   std::copy_if(m_issuesByType[type].begin(), m_issuesByType[type].end(),
                std::back_inserter(potential_issues),
                [this](const int32_t id) { return canServeIssue(id); });
@@ -110,13 +140,8 @@ IssueModel &Issues::popRandomIssue(IssueModel::Type type) {
   auto seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::shuffle(potential_issues.begin(), potential_issues.end(), std::default_random_engine(seed));
 
-  if (potential_issues.empty()) { return kEmptyIssueModel; }
-
-  // A valid issue exists. Mark it as having happened and apply the stat delta
-  m_issuesThatHaveAlreadyHappened.insert(potential_issues[0]);
-  auto model = m_issuesById[potential_issues[0]];
-  m_game.updateStats(model.stat_delta);
-  return m_issuesById[potential_issues[0]];
+  if (potential_issues.empty()) { return -1; }
+  else { return potential_issues[0]; }
 }
 
 std::unordered_set<int32_t> Issues::getIssuesThatHaveAlreadyHappened() const {
@@ -128,7 +153,7 @@ void Issues::setIssuesThatHaveAlreadyHappened(std::unordered_set<int32_t> ids) {
 }
 
 bool Issues::canServeIssue(int32_t id) const {
-  auto issue = m_issuesById.at(id);
+  auto &issue = m_issuesById.at(id);
 
   // Issue can't be served if its dependent actions haven't happened
   if (!issue.dependent_actions.empty()) {

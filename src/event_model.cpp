@@ -17,6 +17,8 @@
 
 #include <libgtfoklahoma/event_model.hpp>
 
+#include <algorithm>
+
 #include <spdlog/spdlog.h>
 
 using namespace libgtfoklahoma;
@@ -25,10 +27,10 @@ bool EventModel::chooseAction(int32_t actionId) {
   if (actionIdIsValid(actionId)) {
     m_chosenAction.set_value(actionId);
     return true;
-  } else {
-    spdlog::error("{} is an invalid action id for this event!", actionId);
-    return false;
   }
+
+  spdlog::warn("{} is an invalid action id for this event!", actionId);
+  return false;
 }
 
 std::future<int32_t> EventModel::chosenAction() {

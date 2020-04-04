@@ -25,6 +25,7 @@
 
 // Local includes
 #include <libgtfoklahoma/event_observer.hpp>
+#include <libgtfoklahoma/issues.hpp>
 #include <libgtfoklahoma/game.hpp>
 #include <libgtfoklahoma/rules.hpp>
 
@@ -55,7 +56,13 @@ void Engine::stop() {
 }
 
 void Engine::mainLoop() {
-  bool mileHasChanged = true;
+  // Events are checked once per mile
+  bool shouldCheckForEvents = true;
+
+  // Issues are checked once per hour
+  bool shouldCheckForHealthIssues = false;
+  bool shouldCheckForMechanicalIssues = false;
+
   uint32_t tick = 0;
   int32_t ticksUntilNextMile = rules::TicksUntilNextMile(*m_game.getStats());
 
@@ -63,14 +70,44 @@ void Engine::mainLoop() {
     std::this_thread::sleep_for(rules::kTickDelayMs);
 
     // Handle queued events ensuring that this is only called once per mile
-    if (mileHasChanged) {
+    if (shouldCheckForEvents) {
       for (const auto &observer : m_eventObservers) {
         for (const auto &id : m_game.getQueuedEventIds()) {
           m_game.getEvents()->handleEvent(id, observer);
         }
       }
-      mileHasChanged = false;
+      shouldCheckForEvents = false;
     }
+
+    // Handle any mech issues
+    if (shouldCheckForMechanicalIssues &&
+        m_game.isAwake() &&
+        rules::MechanicalIssueThisHour(*m_game.getStats())) {
+      auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::MECHANICAL);
+
+      if (id == -1) {
+        spdlog::debug("No more mechanical issues available!");
+      } else {
+        for (const auto &observer : m_eventObservers) {
+          m_game.getIssues()->handleIssue(id, observer);
+        }
+      }
+    }
+    shouldCheckForMechanicalIssues = false;
+
+    // Handle any health issues
+    if (shouldCheckForHealthIssues && rules::HealthIssueThisHour(*m_game.getStats())) {
+      auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::HEALTH);
+
+      if (id == -1) {
+        spdlog::debug("No more health issues available!");
+      } else {
+        for (const auto &observer : m_eventObservers) {
+          m_game.getIssues()->handleIssue(id, observer);
+        }
+      }
+    }
+    shouldCheckForHealthIssues = false;
 
     // Update the time
     if (!(tick % rules::kTicksPerGameHour)) {
@@ -78,6 +115,8 @@ void Engine::mainLoop() {
       for (const auto &observer : m_eventObservers) {
         observer->onHourChanged(new_hour);
       }
+      shouldCheckForHealthIssues = true;
+      shouldCheckForMechanicalIssues = true;
     }
 
     if (!ticksUntilNextMile) {
@@ -86,7 +125,7 @@ void Engine::mainLoop() {
       for (const auto &observer : m_eventObservers) {
         observer->onMileChanged(new_mile);
       }
-      mileHasChanged = true;
+      shouldCheckForEvents = true;
     }
 
     tick++;

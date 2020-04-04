@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <random>
 
 namespace libgtfoklahoma {
 class StatModel;
@@ -38,8 +39,14 @@ const int32_t kDefaultMoneyRemaining = 2000;
 
 #pragma mark - Safety Constants
 const int32_t kDefaultHealth = 100;
-const double kDefaultOddsHealthIssue = 0.4;
-const double kDefaultOddsMechanicalIssue = 0.4;
+const double kDefaultOddsHealthIssuePerHour = 0.4;
+// Mech issues can only happen when awake
+const double kDefaultOddsMechanicalIssuePerHour = 0.4;
+static std::random_device rd;
+static std::mt19937 gen(rd());
+static std::uniform_real_distribution<double> randomGenerator(0,1);
+bool HealthIssueThisHour(const libgtfoklahoma::StatModel &stats);
+bool MechanicalIssueThisHour(const libgtfoklahoma::StatModel &stats);
 
 #pragma mark - Speed Constants
 /* Weight causes an "exponential decay" in speed

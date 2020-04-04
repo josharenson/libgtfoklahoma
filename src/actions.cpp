@@ -116,6 +116,19 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
     }
     observer->onStoreEntered(action, items);
     auto purchasedItems = action.purchasedItems().get();
+
+    // Add purchased items to inventory.. Client should validate item prices
+    // but only an idiot would't do backend validation too
+    for (const auto &itemId : purchasedItems) {
+      auto &item = m_game.getItems()->getItem(itemId);
+      if (item.cost <= m_game.getStats()->money_remaining) {
+        // Adding the item subtracts funds automatically
+        m_game.addItemToInventory(itemId);
+      } else {
+        spdlog::warn("Player doesn't have enough money for item {}. "
+                     "Not adding it to the inventory!", itemId);
+      }
+    }
   }
 
   m_actionsThatHaveAlreadyHappened.insert(id);

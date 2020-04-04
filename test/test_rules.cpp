@@ -24,6 +24,7 @@
 // Includes under test
 #include <libgtfoklahoma/rules.hpp>
 
+#include <iostream>
 using namespace libgtfoklahoma;
 using namespace libgtfoklahoma::rules;
 

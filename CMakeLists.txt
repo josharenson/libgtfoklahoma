@@ -7,6 +7,7 @@ include(GNUInstallDirs)
 # 3P Includes
 set(3P_DIR ${CMAKE_SOURCE_DIR}/third_party)
 set(CATCH_INCLUDE_DIR ${3P_DIR}/Catch2/single_include)
+set(FAKEIT_INCLUDE_DIR ${3P_DIR}/FakeIt/single_header)
 set(RAPID_JSON_INCLUDE_DIR ${3P_DIR}/rapidjson/include)
 set(SPDLOG_INCLUDE_DIR ${3P_DIR}/spdlog/include)
 set(SQLITE_ORM_INCLUDE_DIR ${3P_DIR}/sqlite_orm/include)

@@ -16,6 +16,7 @@
  */
 
 #include <catch2/catch.hpp>
+#include <catch/fakeit.hpp>
 
 #include "helpers.hpp"
 
@@ -23,6 +24,7 @@
 #include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/game.hpp>
 
+using namespace fakeit;
 using namespace libgtfoklahoma;
 using namespace testhelpers;
 
@@ -107,5 +109,63 @@ TEST_CASE("Actions", "[unit]") {
     REQUIRE(model.item_ids[1] == 1);
 
     REQUIRE(model.stat_delta.kit_weight == 5);
+  }
+}
+
+TEST_CASE("Actions - Store Type Actions") {
+  // Describe a store we can enter
+  const char *actionsJson = R"(
+  [
+    {
+      "display_name": "",
+      "id": 0,
+      "items": [0],
+      "type": ["STORE"]
+    }
+  ]
+  )";
+
+  const char *itemsJson = R"(
+  [
+    {
+      "id": 0,
+      "category": "MISC",
+      "cost": 1,
+      "display_name": "",
+      "image_url": "",
+      "stat_changes": [{"money_remaining": -1}]
+    }
+  ]
+  )";
+
+  Mock<IEventObserver> mockObserver;
+  Fake(Dtor(mockObserver));
+
+  auto mockObserverPtr = std::unique_ptr<IEventObserver>(&mockObserver.get());
+
+  Game game("", actionsJson, validEventJson, validIssueJson, itemsJson);
+  //Engine engine(game);
+  //engine.registerEventObserver(std::move(mockObserverPtr));
+
+  SECTION("Purchased item is added to inventory when funds are available") {
+    StatModel stats;
+    stats.money_remaining = 1; // Make sure there is enough
+    game.updateStats(stats);
+    REQUIRE(game.getStats()->money_remaining >= 1);
+    auto initial_money = game.getStats()->money_remaining;
+
+    // Tell the mock to purchase the item
+    When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action, std::vector<ItemModel> &items){
+      action.purchaseItem(0);
+      action.completePurchase();
+      return true;
+    });
+
+    game.getActions()->handleAction(0, mockObserverPtr);
+    auto inventory = game.getInventory();
+    REQUIRE(inventory.size() == 1);
+    REQUIRE(inventory[0].get().id == 0);
+    auto current_money = game.getStats()->money_remaining;
+    REQUIRE(current_money == initial_money - 1);
   }
 }

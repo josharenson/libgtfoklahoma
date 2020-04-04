@@ -30,6 +30,7 @@ public:
     void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
     void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
     bool onEvent(EventModel&, std::vector<std::reference_wrapper<ActionModel>>&) override { return false; }
+    bool onIssueOccurred(IssueModel &issue) override { return false; }
     bool onStoreEntered(ActionModel&, std::vector<ItemModel>&) override { return false; }
 
   private:
@@ -88,6 +89,11 @@ std::unique_ptr<IEventObserver> Game::getInternalObserver() {
 
 /** Inventory management */
 void Game::addItemToInventory(int32_t id, int32_t quantity) {
+  auto item = getItems()->getItem(id);
+  for (int i = 0; i < quantity; i ++) {
+    updateStats(item.stat_delta);
+  }
+
   if (m_inventory.count(id)) {
     m_inventory[id] += quantity;
   } else {
@@ -123,9 +129,13 @@ std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() const {
 }
 
 /** Stats managememt */
+bool Game::isAwake() const {
+  return m_currentHour >= m_stats->wakeup_hour &&
+         m_currentHour < m_stats->bedtime_hour;
+}
+
 void Game::updateStats(const StatModel &delta) { *m_stats = *m_stats + delta; }
 
 /** Time management */
 int32_t Game::getCurrentHour() const { return m_currentHour; }
 void Game::setCurrentHour(int32_t hour) { m_currentHour = hour; }
-

@@ -4,12 +4,12 @@
 [submodule "third_party/sqlite_orm"]
 	path = third_party/sqlite_orm
 	url = https://github.com/fnc12/sqlite_orm
-[submodule "third_party/FakeIt"]
-	path = third_party/FakeIt
-	url = https://github.com/eranpeer/FakeIt
 [submodule "third_party/Catch2"]
 	path = third_party/Catch2
 	url = https://github.com/catchorg/Catch2
 [submodule "third_party/rapidjson"]
 	path = third_party/rapidjson
 	url = https://github.com/Tencent/rapidjson/
+[submodule "third_party/FakeIt"]
+	path = third_party/FakeIt
+	url = https://github.com/eranpeer/FakeIt

@@ -28,6 +28,7 @@ namespace libgtfoklahoma {
 class ActionModel;
 class Engine;
 struct EventModel;
+struct IssueModel;
 struct ItemModel;
 
 class IEventObserver {
@@ -52,6 +53,8 @@ public:
    * response has been recorded, false if the signal should be ignored
    */
   virtual bool onEvent(EventModel &model, std::vector<std::reference_wrapper<ActionModel>> &actions) = 0;
+
+  virtual bool onIssueOccurred(IssueModel &model) = 0;
 
   /*
    * @param models A vector of items available in the store

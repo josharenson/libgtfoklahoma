@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -28,10 +29,13 @@
 namespace libgtfoklahoma {
 
 class Game;
+class IEventObserver;
 class Issues {
 public:
   explicit Issues(Game &game, const char *issuesJson=kIssuesJson);
-  IssueModel &popRandomIssue(IssueModel::Type type);
+  IssueModel &getIssue(int32_t id);
+  void handleIssue(int32_t id, const std::unique_ptr<IEventObserver> &observer);
+  int32_t popRandomIssueId(IssueModel::Type type);
 
   [[nodiscard]] std::unordered_set<int32_t> getIssuesThatHaveAlreadyHappened() const;
   void setIssuesThatHaveAlreadyHappened(std::unordered_set<int32_t> ids);

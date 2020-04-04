@@ -64,6 +64,7 @@ public:
   [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory() const;
 
   // Stat managmeent
+  bool isAwake() const;
   void updateStats(const StatModel &delta);
 
   // Time management

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <future>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,15 @@ struct IssueModel {
   StatModel stat_delta;
   Type type{Type::INVALID};
 
+  bool chooseAction(int32_t actionId);
+  std::future<int32_t> chosenAction();
+
   bool operator==(const IssueModel &rhs) const;
+
+private:
+  [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
+
+private:
+  std::promise<int32_t> m_chosenAction;
 };
 } // namespace libgtfoklahoma

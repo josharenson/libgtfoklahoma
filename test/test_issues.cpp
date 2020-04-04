@@ -56,33 +56,35 @@ TEST_CASE("Issues", "[unit]") {
 
   SECTION("Issues::popRandomIssue") {
     // This isn't random because there is only one of each type
-    auto issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
-    REQUIRE(issue.description == "HEALTH ISSUE");
+    auto id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
+    REQUIRE(issues->getIssue(id).description == "HEALTH ISSUE");
+    issues->handleIssue(id, nullptr);
 
     // Issue can't be served again
-    issue = issues->popRandomIssue(IssueModel::Type::HEALTH);
-    REQUIRE(issue == Issues::kEmptyIssueModel);
+    id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
+    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
 
     // Dependent actions and inventory work
-    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
-    REQUIRE(issue == Issues::kEmptyIssueModel);
+    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
     game.getActions()->handleAction(0, nullptr);
 
-    // Should still be empty as inventory requirments aren't met
-    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
-    REQUIRE(issue == Issues::kEmptyIssueModel);
+    // Should still be empty as inventory requirements aren't met
+    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
 
     // NOW we should get the issue as all requirments have been met
     game.addItemToInventory(0);
-    issue = issues->popRandomIssue(IssueModel::Type::MECHANICAL);
-    REQUIRE_FALSE(issue == Issues::kEmptyIssueModel);
+    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE_FALSE(issues->getIssue(id) == Issues::kEmptyIssueModel);
   }
 
   SECTION("Issues::getIssuesThatHaveAlreadyHappened") {
     auto haveHappened = issues->getIssuesThatHaveAlreadyHappened();
     REQUIRE(haveHappened.empty());
 
-    auto _ = issues->popRandomIssue(IssueModel::Type::HEALTH);
+    auto id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
+    issues->handleIssue(id, nullptr);
     haveHappened = issues->getIssuesThatHaveAlreadyHappened();
     REQUIRE(haveHappened.count(0));
   }

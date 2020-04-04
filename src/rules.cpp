@@ -24,6 +24,14 @@
 using namespace libgtfoklahoma;
 using namespace libgtfoklahoma::rules;
 
+bool libgtfoklahoma::rules::HealthIssueThisHour(const libgtfoklahoma::StatModel &stats) {
+  return randomGenerator(gen) <= stats.odds_health_issue;
+}
+
+bool libgtfoklahoma::rules::MechanicalIssueThisHour(const libgtfoklahoma::StatModel &stats) {
+  return randomGenerator(gen) <= stats.odds_mech_issue;
+}
+
 int32_t libgtfoklahoma::rules::RealSpeed(const StatModel &stats) {
   return round(stats.max_mph * exp(-kWeightLambda * stats.kit_weight));
 }

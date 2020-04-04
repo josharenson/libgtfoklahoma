@@ -17,7 +17,30 @@
 
 #include <libgtfoklahoma/issue_model.hpp>
 
+#include <algorithm>
+
+#include <spdlog/spdlog.h>
+
 using namespace libgtfoklahoma;
+
+bool IssueModel::chooseAction(int32_t actionId) {
+ if (actionIdIsValid(actionId)) {
+   m_chosenAction.set_value(actionId);
+   return true;
+ }
+
+ spdlog::warn("{} is an invalid action id for this issue!", actionId);
+ return false;
+}
+
+std::future<int32_t> IssueModel::chosenAction (){
+  return m_chosenAction.get_future();
+};
+
+bool IssueModel::actionIdIsValid(int32_t actionId) const {
+  auto it = std::find(actions.cbegin(), actions.cend(), actionId);
+  return it != actions.cend();
+}
 
 bool IssueModel::operator==(const IssueModel &rhs) const {
   return this->id == rhs.id &&

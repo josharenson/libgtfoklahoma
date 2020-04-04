@@ -37,8 +37,8 @@ struct StatModel {
   int32_t kit_weight{1};
   int32_t max_mph {1};
   int32_t money_remaining{rules::kDefaultMoneyRemaining};
-  double odds_health_issue {rules::kDefaultOddsHealthIssue};
-  double odds_mech_issue {rules::kDefaultOddsMechanicalIssue};
+  double odds_health_issue {rules::kDefaultOddsHealthIssuePerHour};
+  double odds_mech_issue {rules::kDefaultOddsMechanicalIssuePerHour};
   Pace pace {Pace::FRED};
   int32_t wakeup_hour {rules::kDefaultWakeupHour};
 

@@ -4,6 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(GNUInstallDirs)
 
+option(BUILD_SAMPLE_CLIENT "Build the sample client and its dependencies" ON)
+
 # 3P Includes
 set(3P_DIR ${CMAKE_SOURCE_DIR}/third_party)
 set(CATCH_INCLUDE_DIR ${3P_DIR}/Catch2/single_include)

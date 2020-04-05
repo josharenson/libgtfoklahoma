@@ -24,6 +24,7 @@
 
 // 3P includes
 #include <spdlog/spdlog.h>
+#include <termbox.h>
 
 // Local includes
 #include <event_observer.hpp>
@@ -31,6 +32,7 @@
 int main(int argc, char *argv[]) {
   spdlog::set_level(spdlog::level::debug);
 
+  tb_init();
   libgtfoklahoma::Game game("");
   auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
   auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>(game);

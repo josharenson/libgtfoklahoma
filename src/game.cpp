@@ -30,7 +30,8 @@ public:
     void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
     void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
     bool onEvent(EventModel&) override { return false; }
-    bool onIssueOccurred(IssueModel &issue) override { return false; }
+    bool onIssueOccurred(IssueModel&) override { return false; }
+    void onStatsChanged(StatModel&) override {}
     bool onStoreEntered(ActionModel&) override { return false; }
 };
 
@@ -39,11 +40,12 @@ Game::Game(std::string name)
 , m_currentHour(0)
 , m_currentMile(0)
 , m_events(std::make_unique<Events>(*this))
-, m_internalObserver(std::make_unique<InternalObserver>(*this))
 , m_issues(std::make_unique<Issues>(*this))
 , m_items(std::make_unique<Items>())
 , m_name(std::move(name))
-, m_stats(std::make_unique<StatModel>()) {}
+, m_stats(std::make_unique<StatModel>()) {
+  m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
+}
 
 Game::Game(std::string name,
            const char *actionJson,
@@ -54,11 +56,12 @@ Game::Game(std::string name,
 , m_currentHour(0)
 , m_currentMile(0)
 , m_events(std::make_unique<Events>(*this, eventJson))
-, m_internalObserver(std::make_unique<InternalObserver>(*this))
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
-, m_stats(std::make_unique<StatModel>()) {}
+, m_stats(std::make_unique<StatModel>()) {
+  m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
+}
 
 /** Access game components */
 std::unique_ptr<Actions> &Game::getActions() { return m_actions; }
@@ -74,14 +77,6 @@ void Game::setCurrentMile(const int32_t mile) { m_currentMile = mile; }
 /** Event management */
 std::vector<int32_t> Game::getQueuedEventIds() const {
  return m_events->eventsAtMile(m_currentMile);
-}
-
-/** Internal bits */
-// Engine needs to notify Game about events, but if Game had a reference to Engine to
-// do this itself, there would be a circular dependency. This provides Engine a
-// mechanism to register the internal observer itself.
-std::unique_ptr<IEventObserver> Game::getInternalObserver() {
-  return std::move(m_internalObserver);
 }
 
 /** Inventory management */
@@ -125,14 +120,33 @@ std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() const {
   return result;
 }
 
+/** Observer management */
+std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>>
+Game::getObservers() {
+  std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>> result;
+  for (auto &observer : m_observers) {
+    result.emplace_back(observer);
+  }
+  return result;
+}
+
+void Game::registerEventObserver(std::unique_ptr<IEventObserver> observer) {
+  m_observers.emplace_back(std::move(observer));
+}
+
 /** Stats managememt */
 bool Game::isAwake() const {
   return m_currentHour >= m_stats->wakeup_hour &&
          m_currentHour < m_stats->bedtime_hour;
 }
 
-void Game::updateStats(const StatModel &delta) { *m_stats = *m_stats + delta; }
+void Game::updateStats(const StatModel &delta) { *m_stats = *m_stats + delta;
+  for (const auto &observer : m_observers) {
+    observer->onStatsChanged(*m_stats);
+  }
+}
 
 /** Time management */
 int32_t Game::getCurrentHour() const { return m_currentHour; }
 void Game::setCurrentHour(int32_t hour) { m_currentHour = hour; }
+

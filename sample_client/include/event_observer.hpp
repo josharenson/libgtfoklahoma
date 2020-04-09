@@ -20,11 +20,12 @@
 #include <libgtfoklahoma/event_observer.hpp>
 
 namespace libgtfoklahoma {
+class Game;
 struct ActionModel;
 struct EventModel;
-class Game;
 struct IssueModel;
 struct ItemModel;
+struct StatModel;
 }
 namespace gtfoklahoma {
 
@@ -39,6 +40,7 @@ public:
   void onMileChanged(int32_t mile) override;
   bool onEvent(libgtfoklahoma::EventModel &event) override;
   bool onIssueOccurred(libgtfoklahoma::IssueModel &issue) override;
+  void onStatsChanged(libgtfoklahoma::StatModel &stats) override;
   bool onStoreEntered(libgtfoklahoma::ActionModel &action) override;
 
 private:

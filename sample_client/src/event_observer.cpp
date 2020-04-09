@@ -94,6 +94,10 @@ bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
   return true;
 }
 
+void EventObserver::onStatsChanged(libgtfoklahoma::StatModel &stats) {
+
+}
+
 bool EventObserver::onStoreEntered(ActionModel &action) {
   spdlog::debug("Entered a store!");
 

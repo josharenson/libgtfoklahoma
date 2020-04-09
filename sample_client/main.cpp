@@ -57,9 +57,10 @@ int main(int argc, char *argv[]) {
 
 
   libgtfoklahoma::Game game("");
-  auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
   auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>(game, ui);
-  engine->registerEventObserver(std::move(eventObserver));
+  game.registerEventObserver(std::move(eventObserver));
+
+  auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
   engine->start();
 
   // UI thread?

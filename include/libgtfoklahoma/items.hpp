@@ -47,7 +47,7 @@ private:
         "stat_changes": [
           {"kit_weight": 35},
           {"max_mph": 12},
-          {"money_remaining": 1200},
+          {"money_remaining": -1200},
           {"odds_mech_issue": -0.05},
           {"odds_health_issue": -0.02}
         ]

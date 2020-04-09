@@ -32,15 +32,17 @@ namespace libgtfoklahoma {
 struct StatModel {
   enum class Pace {CHILL_AF, FRED, MERCKX};
 
-  int32_t bedtime_hour {rules::kDefaultBedtimeHour};
-  int32_t health{rules::kDefaultHealth}; // When health is 0, you die
-  int32_t kit_weight{1};
-  int32_t max_mph {1};
-  int32_t money_remaining{rules::kDefaultMoneyRemaining};
-  double odds_health_issue {rules::kDefaultOddsHealthIssuePerHour};
-  double odds_mech_issue {rules::kDefaultOddsMechanicalIssuePerHour};
+  // These all need to be 0 so that adding stat deltas don't include these
+  int32_t bedtime_hour {0};
+  int32_t health{0}; // When health is 0, you die
+  int32_t kit_weight{0};
+  int32_t max_mph {0};
+  int32_t money_remaining{0};
+  double odds_health_issue {0};
+  double odds_mech_issue {0};
+  // FIXME: this is going to need a dedicated setter
   Pace pace {Pace::FRED};
-  int32_t wakeup_hour {rules::kDefaultWakeupHour};
+  int32_t wakeup_hour {0};
 
   bool operator== (const StatModel &rhs) const {
     return this->bedtime_hour == rhs.bedtime_hour &&

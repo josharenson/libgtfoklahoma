@@ -31,6 +31,7 @@
 
 namespace libgtfoklahoma {
 
+class IEventObserver;
 class Game {
 public:
   explicit Game(std::string name);
@@ -40,22 +41,16 @@ public:
                 const char *issueJson,
                 const char *itemJson);
 
-  // Access game components
+  // Action management
   std::unique_ptr<Actions> &getActions();
-  std::unique_ptr<Events> &getEvents();
-  std::unique_ptr<Issues> &getIssues();
-  std::unique_ptr<Items> &getItems();
-  std::unique_ptr<StatModel> &getStats();
 
   // Distance management
   [[nodiscard]] int32_t getCurrentMile() const;
   void setCurrentMile(int32_t mile);
 
   // Event management
+  std::unique_ptr<Events> &getEvents();
   [[nodiscard]] std::vector<int32_t> getQueuedEventIds() const;
-
-  // Internal bits
-  std::unique_ptr<IEventObserver> getInternalObserver();
 
   // Inventory management
   void addItemToInventory(int32_t id, int32_t quantity=1);
@@ -63,8 +58,20 @@ public:
   [[nodiscard]] bool hasItemInInventory(int32_t id) const;
   [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory() const;
 
-  // Stat managmeent
-  bool isAwake() const;
+  // Issue management
+  std::unique_ptr<Issues> &getIssues();
+
+  // Item management
+  std::unique_ptr<Items> &getItems();
+
+  // Observer management
+  std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>>
+  getObservers();
+  void registerEventObserver(std::unique_ptr<IEventObserver> observer);
+
+  // Stat management
+  std::unique_ptr<StatModel> &getStats();
+  [[nodiscard]] bool isAwake() const;
   void updateStats(const StatModel &delta);
 
   // Time management
@@ -76,11 +83,11 @@ private:
   int32_t m_currentHour;
   int32_t m_currentMile;
   std::unique_ptr<Events> m_events;
-  std::unique_ptr<IEventObserver> m_internalObserver;
   std::map<int32_t, int32_t> m_inventory;
   std::unique_ptr<Items> m_items;
   std::unique_ptr<Issues> m_issues;
   std::string m_name;
+  std::vector<std::unique_ptr<IEventObserver>> m_observers;
   std::unique_ptr<StatModel> m_stats;
 };
 }

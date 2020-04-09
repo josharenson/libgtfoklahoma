@@ -26,13 +26,11 @@
 namespace libgtfoklahoma {
 
 class Game;
-class IEventObserver;
 class Engine {
 public:
   explicit Engine(Game &game);
   ~Engine();
 
-  void registerEventObserver(std::unique_ptr<IEventObserver> observer);
   void start();
   void stop();
 
@@ -41,10 +39,9 @@ private:
   void mainLoop();
 
 private:
+  Game &m_game;
+
   std::thread m_eventLoopThread;
   std::atomic<bool> m_running;
-
-  Game &m_game;
-  std::vector<std::unique_ptr<IEventObserver>> m_eventObservers;
 };
 }

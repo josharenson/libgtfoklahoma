@@ -25,13 +25,12 @@
 
 namespace libgtfoklahoma {
 
-class ActionModel;
-class Engine;
-struct EventModel;
 class Game;
+class ActionModel;
+struct EventModel;
 struct IssueModel;
 struct ItemModel;
-
+struct StatModel;
 class IEventObserver {
 public:
 
@@ -63,6 +62,12 @@ public:
    * @return true if this observer is responsible for handling this action
    */
   virtual bool onIssueOccurred(IssueModel &issue) = 0;
+
+  /**
+   *
+   * @param stats - A reference to the updated stat model
+   */
+  virtual void onStatsChanged(StatModel &stats) = 0;
 
   /**
    *

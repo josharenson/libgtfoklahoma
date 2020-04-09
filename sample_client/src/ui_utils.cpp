@@ -128,7 +128,10 @@ UIUtils::BlitBuffer UIUtils::insertLineBreaks(const std::string &str) {
     tokens.push_back(token);
     tokens.emplace_back("");
   }
-  tokens.pop_back(); // Remove trailing line break
+
+  // If there were _no_ newline characters, remove the trailing line
+  if (tokens.size() == 2)
+    tokens.pop_back(); // Remove trailing line break
 
   return tokens;
 }

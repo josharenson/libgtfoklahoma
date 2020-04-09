@@ -19,11 +19,8 @@
 #include <ui.hpp>
 
 // System includes
-#include <chrono>
-#include <cmath>
 #include <functional>
-#include <list>
-#include <thread>
+
 
 // 3P includes
 #include <spdlog/spdlog.h>
@@ -52,8 +49,8 @@ Ui::Ui()
   m_termHeight = tb_height();
   m_termWidth = tb_width();
 
-  m_termHeight = 100;
-  m_termWidth = 100;
+  //m_termHeight = 100;
+  //m_termWidth = 100;
 
   m_mainWindow.height = (.6 * m_termHeight);
   m_mainWindow.width = (.95 * m_termWidth);
@@ -167,8 +164,9 @@ void Ui::renderStats(const std::unique_ptr<StatModel> &stats, int32_t mile, int3
   std::string _hour = "Hour: " + std::to_string(hour);
   std::string _mile = "Mile: " + std::to_string(mile);
   std::string _health = "Health: " + std::to_string(stats->health);
+  std::string _money = "Money: " + std::to_string(stats->money_remaining);
 
-  UIUtils::BlitBuffer buf = {_hour, _mile, _health};
+  UIUtils::BlitBuffer buf = {_hour, _mile, _health, _money};
   UIUtils::blitWindow(buf, m_statsWindow);
 }
 

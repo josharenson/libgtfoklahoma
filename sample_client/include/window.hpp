@@ -60,10 +60,6 @@ struct Margins {
 };
 
 struct WMObject {
-  WMObject(int32_t termHeight, int32_t termWidth)
-  : m_termHeight(termHeight)
-  , m_termWidth(termWidth) {}
-
   Anchors anchors;
   Margins margins;
 
@@ -87,34 +83,7 @@ struct WMObject {
   [[nodiscard]] int32_t right() const;
   [[nodiscard]] int32_t horizontalCenter() const;
   [[nodiscard]] int32_t verticalCenter() const;
-
-  // Can be overridden to allow for things such as
-  // min, max, and percentage based values
-  [[nodiscard]] virtual int32_t rawHeight() const;
-  [[nodiscard]] virtual int32_t rawWidth() const;
-
-protected:
-  int32_t m_termHeight;
-  int32_t m_termWidth;
 };
 
-struct Text : public WMObject {
-  Text(int32_t termHeight, int32_t termWidth)
-  : WMObject(termHeight, termWidth) {}
-
-  std::string text;
-  std::string elideText = "...";
-  bool wrapOnWord = true;
-};
-
-struct Window : public WMObject {
-  Window(int32_t termHeight, int32_t termWidth)
-  : WMObject(termHeight, termWidth) {}
-
-  float heightPercent = -1;
-  float widthPercent = -1;
-
-  [[nodiscard]] int32_t rawHeight() const override;
-  [[nodiscard]] int32_t rawWidth() const override;
-};
+struct Window : public WMObject {};
 }

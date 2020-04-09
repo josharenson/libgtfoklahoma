@@ -58,8 +58,8 @@ private:
     {
       "id": 1,
       "actions": [0, 10],
-      "description": "",
-      "display_name": "Like's Country Store",
+      "description": "Headquartered in Oklahoma City, this sprawling paradise is an American sized convenience store that also dabbles in the sale of CB radios.",
+      "display_name": "Like's Travel Stop And Country Store",
       "mile": 2
     }
   ]

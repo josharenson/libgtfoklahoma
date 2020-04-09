@@ -17,7 +17,7 @@
 
 #include <ui_utils.hpp>
 
-#include <iostream>
+#include <cstdlib>
 #include <sstream>
 #include <vector>
 
@@ -28,33 +28,17 @@
 
 using namespace gtfoklahoma;
 
-UIUtils::UIUtils()
-: m_height(0)
-, m_width(0) {
-
-    if(tb_init() != 0) {
-      spdlog::error("Terminal doesn't support magic!");
-      abort();
-    }
-    tb_select_output_mode(TB_OUTPUT_NORMAL);
-
-    m_height = tb_height();
-    m_width = tb_width();
+void UIUtils::blitWindow(const BlitBuffer &buffer, const Window &window, bool clear) {
+  if (clear) { UIUtils::clearWindow(window);}
+  blitRaw(buffer, window.x(), window.y(), window.fg_color, window.bg_color);
 }
 
-UIUtils::~UIUtils() { tb_shutdown(); }
-
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "MemberFunctionCanBeStatic"
 void UIUtils::clearWindow(const Window &window) {
-  spdlog::debug("x:{}, y:{}, top:{}, bottom:{}, left:{}, right:{}, rawHeight:{}",
-      window.x(), window.y(), window.top(), window.bottom(), window.left(), window.right(), window.rawHeight());
-
   auto col_begin = window.x();
-  auto col_end = col_begin + window.rawWidth();
+  auto col_end = col_begin + window.width;
 
   auto row_begin = window.y();
-  auto row_end = row_begin + window.rawHeight();
+  auto row_end = row_begin + window.height;
 
   for (int row = row_begin; row < row_end; row++) {
     for (int col = col_begin; col < col_end; col++) {
@@ -63,90 +47,170 @@ void UIUtils::clearWindow(const Window &window) {
   }
   tb_present();
 }
-#pragma clang diagnostic pop
 
+int32_t UIUtils::getInputInt(const Window &window, const std::string &prompt,
+                             const std::function<bool(int32_t)> &validator,
+                             const std::string &retry_prompt) {
+  struct tb_event event{};
+  blitWindow({prompt}, window);
 
-int32_t UIUtils::termHeight() const { return m_height; }
-int32_t UIUtils::termWidth() const { return m_width; }
+  std::vector<uint32_t> accumulator;
+  int32_t charsInputSoFar = 0;
 
-void UIUtils::drawText(const Text &text) {
-  auto rowBegin = text.y();
-  auto colBegin = text.x();
-  auto colEnd = colBegin + text.rawWidth();
-
-  if (text.wrapOnWord) {
-    std::vector<std::string> tokens;
-    std::stringstream ss(text.text);
-    std::string token;
-    while (std::getline(ss, token, ' ')) {
-      tokens.push_back(token);
+  auto convert = [](std::vector<uint32_t> &asciiVals){
+    int32_t result = 0;
+    std::reverse(asciiVals.begin(), asciiVals.end());
+    for (int i = 0; i < asciiVals.size(); i++) {
+      auto digit = asciiVals[i] - 0x30;
+      digit *= pow(10, i);
+      result += digit;
     }
+    return result;
+  };
 
-    // Write words, wrapping lines on word boundaries and eliding if necessary
-    int32_t curIdx = 0;
-    int32_t rowWidth = text.x() + text.rawWidth();
+  auto echo = [&charsInputSoFar, prompt, window](uint32_t ch){
+    auto x = window.x() + prompt.length() + charsInputSoFar;
+    tb_change_cell(x, window.y(), ch, window.fg_color, window.bg_color);
+    tb_present();
+    charsInputSoFar++;
+  };
 
-    while (curIdx < tokens.size()) {
-      // Elide the token if necessary
-      auto paddedWord = tokens.at(curIdx);
-      if (paddedWord.length() > rowWidth) {
-        paddedWord = elide(paddedWord, rowWidth, text.elideText);
+  auto retry = [&accumulator, &charsInputSoFar, prompt, retry_prompt, window](){
+    spdlog::debug("Entering retry workflow");
+    std::chrono::milliseconds delay(2000);
+    blitWindow({retry_prompt}, window);
+    std::this_thread::sleep_for(delay);
+    blitWindow({prompt}, window);
+    charsInputSoFar = 0;
+    accumulator.clear();
+  };
+
+  auto inputIsNumber = [](const std::vector<uint32_t> &accumulator){
+    for (const auto &ch : accumulator) {
+      if (ch < 48 || ch > 57) {
+        spdlog::debug("Input failed validation");
+        return false;
+      }
+    }
+    spdlog::debug("Input validated");
+    spdlog::default_logger()->flush();
+    return true;
+  };
+
+  while (tb_poll_event(&event)) {
+    // Ignore non key events
+    if (event.type != TB_EVENT_KEY) { continue; }
+
+    // If submitted, validate and break
+    if (event.key == TB_KEY_ENTER) {
+      if (inputIsNumber(accumulator) && validator(convert(accumulator))) {
+        break;
       } else {
-        paddedWord += " ";
+        retry();
       }
 
-      // Try printing the toke on the current line and increment if
-      // it won't fit
-      if (!writeWord(paddedWord, rowBegin, colBegin, colEnd, text.fg_color,
-                     text.bg_color)) {
-        colBegin = text.x();
-        rowBegin++;
-      } else {
-        colBegin += paddedWord.length();
-        curIdx++;
-      }
-    }
-  } else {
-    // No word wrap, just write and elide if necessary
-    auto realText = text.text;
-    if (text.text.length() > (colEnd - colBegin)) {
-      realText = elide(realText, (colEnd - colBegin), text.elideText);
-    }
-    int32_t idx = 0;
-    for (int col = colBegin; col < colEnd; col++) {
-      if (idx == realText.length()) { break; }
-      tb_change_cell(col, rowBegin, realText.at(idx), text.fg_color, text.bg_color);
-      idx++;
+      // Otherwise we have a key event that isn't "enter" so echo it.
+    } else {
+      accumulator.push_back(event.ch);
+      echo (event.ch);
     }
   }
-  tb_present();
+
+  return convert(accumulator);
 }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "MemberFunctionCanBeStatic"
+UIUtils::BlitBuffer UIUtils::insertLineBreaks(const std::string &str) {
+  // Split on newlines - not carriage returns cause those are stupid.
+  std::vector<std::string> tokens;
+  std::stringstream ss(str);
+  std::string token;
+  while (std::getline(ss, token, '\n')) {
+    tokens.push_back(token);
+    tokens.emplace_back("");
+  }
+  tokens.pop_back(); // Remove trailing line break
+
+  return tokens;
+}
+
 std::string UIUtils::elide(const std::string &str, int32_t result_length,
                            const std::string &elideText) {
 
   return str.substr(0, result_length - elideText.length()) + elideText;
 }
-#pragma clang diagnostic pop
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "MemberFunctionCanBeStatic"
-bool UIUtils::writeWord(const std::string &word,
-                        int32_t row,
-                        int32_t col_begin,
-                        int32_t col_end,
-                        uint16_t fg_color,
-                        uint16_t bg_color) {
+UIUtils::BlitBuffer UIUtils::wrapString(const std::string &str,
+                                        const Window &window,
+                                        const char delimiter) {
+  BlitBuffer result;
 
-  if (word.length() > col_end - col_begin) { return false; }
-  int idx = 0;
-  for (int col = col_begin; col < col_begin + word.length(); col++) {
-    tb_change_cell(col, row, (uint32_t)word.at(idx), fg_color, bg_color);
-    idx++;
+  // Tokenize by delimiter
+  std::vector<std::string> tokens;
+  std::stringstream ss(str);
+  std::string token;
+  while (std::getline(ss, token, delimiter)) {
+    tokens.push_back(token);
   }
 
-  return true;
+  auto shouldWrap = [](const std::string &word, int32_t x_begin, int32_t x_end){
+    return (word.length() > (x_end - x_begin));
+  };
+
+  int32_t curIdx = 0;
+  int32_t rowWidth = window.width;
+  auto rowBegin = window.y();
+  auto colBegin = window.x();
+  auto colEnd = colBegin + window.width;
+
+  std::string currentLine;
+  while (curIdx < tokens.size()) {
+    // Elide the token if necessary
+    auto paddedWord = tokens.at(curIdx);
+    // +1 is to account for the delimiter
+    if (paddedWord.length() + 1 > rowWidth) {
+      paddedWord = elide(paddedWord, rowWidth, "...");
+    } else {
+      paddedWord += delimiter;
+    }
+
+    // Try printing the token on the current line and increment if
+    // it won't fit
+    if (shouldWrap(paddedWord, colBegin, colEnd)) {
+      result.push_back(currentLine);
+      currentLine = paddedWord;
+      colBegin = window.x() + paddedWord.length();
+      rowBegin++;
+      curIdx++;
+    } else {
+      currentLine += paddedWord;
+      colBegin += paddedWord.length();
+      curIdx++;
+    }
+  }
+
+  result.push_back(currentLine);
+  return result;
 }
-#pragma clang diagnostic pop
+
+void UIUtils::blitRaw(const BlitBuffer &buffer, int32_t x, int32_t y,
+                 uint16_t fg_color, uint16_t bg_color) {
+  /*BlitBuffer  jam = {
+      {"-------- __@ "},
+      {"----- _`\\<,_ "},
+      {"---- (*)/ (*)"}
+  };*/
+  auto num_cols = buffer[0].length();
+  auto num_rows = buffer.size();
+  int32_t colIdx = 0;
+  int32_t rowIdx = 0;
+  for (int row = y; row < (y + num_rows); row++) {
+    for (int col = x; col < (x + num_cols); col++) {
+      tb_change_cell(col, row, buffer[rowIdx][colIdx], fg_color, bg_color);
+      colIdx++;
+    }
+    colIdx = 0;
+    rowIdx++;
+    num_cols = buffer[rowIdx].length();
+  }
+  tb_present();
+}

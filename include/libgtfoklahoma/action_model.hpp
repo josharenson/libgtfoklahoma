@@ -39,6 +39,7 @@ struct ActionModel {
   // If action is STORE type
   std::vector<int32_t> item_ids;
   void completePurchase();
+  bool itemIsInStock(int32_t itemId) const;
   void purchaseItem(int32_t id_to_buy);
   std::future<std::vector<int32_t>> purchasedItems();
 

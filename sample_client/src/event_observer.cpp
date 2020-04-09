@@ -18,118 +18,115 @@
 #include <event_observer.hpp>
 
 // Library includes
-#include <libgtfoklahoma/actions.hpp>
-#include <libgtfoklahoma/events.hpp>
+#include <libgtfoklahoma/action_model.hpp>
+#include <libgtfoklahoma/event_model.hpp>
 #include <libgtfoklahoma/game.hpp>
-#include <libgtfoklahoma/items.hpp>
+#include <libgtfoklahoma/item_model.hpp>
 
 // System includes
-#include <iostream>
 #include <utility>
 
 // 3P includes
 #include <spdlog/spdlog.h>
 
+// Local includes
+#include <ui.hpp>
+#include <ui_utils.hpp>
+
 using namespace gtfoklahoma;
 using namespace libgtfoklahoma;
 
-EventObserver::EventObserver(Game &game)
-: IEventObserver(game) {}
+EventObserver::EventObserver(Game &game, Ui &ui)
+: m_ui(ui)
+, IEventObserver(game) {}
 
 void EventObserver::onHourChanged(int32_t hour) {
   spdlog::debug("Current hour is {}", hour);
+  m_ui.renderStats(m_game.getStats(), m_game.getCurrentMile(), hour);
 }
 
 void EventObserver::onMileChanged(int32_t mile) {
   spdlog::debug("Current mile is {}", mile);
+  m_ui.renderStats(m_game.getStats(), mile, m_game.getCurrentHour());
 }
 
 bool EventObserver::onEvent(EventModel &event) {
   spdlog::debug("POI Encountered-> " + event.display_name);
-  int32_t result;
 
-  std::cout << "Welcome to " + event.display_name << std::endl;
-
-  int32_t choice = 0;
-  auto actionIds = event.action_ids;
-  for (const auto &actionId :actionIds) {
-    auto &action = m_game.getActions()->getAction(actionId);
-
-    std::cout << "\t" + std::to_string(choice) + ". " + action.display_name
-    << std::endl;
-    choice++;
+  std::vector<std::reference_wrapper<ActionModel>> actions;
+  for (const auto &actionId : event.action_ids) {
+    actions.emplace_back(m_game.getActions()->getAction(actionId));
   }
 
-  while (true) {
-    std::cout << "Enter a number-> ";
-    std::cin >> result;
-    if (actionIds.size() >= result && event.chooseAction(actionIds.at(result))) {
-      break;
-    } else {
-      std::cout << "\nInvalid choice!" << std::endl;
-    }
-  }
+  m_ui.renderEvent(event, actions);
 
+  // Convert the choice into an action id and ensure its a valid action id
+  const auto validator = [actions, &event]  (int32_t i) -> bool {
+    if (i >= event.action_ids.size()) { return false; }
+    auto id = actions.at(i).get().id;
+    return event.actionIdIsValid(id);
+  };
+
+  auto result = UIUtils::getInputInt(m_ui.inputBar(),"Please enter a number-> ", validator);
+  event.chooseAction(actions.at(result).get().id);
   return true;
 }
 
 bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
   spdlog::debug("Issue {} occurred", issue.id);
-  std::cout << issue.display_name << std::endl;
 
-  auto actionIds = issue.actions;
-  int32_t choice = 0;
-  for (const auto &actionId : actionIds) {
-    auto &action = m_game.getActions()->getAction(actionId);
-    std::cout << "\t" + std::to_string(choice) + ". " + action.display_name
-              << std::endl;
-    choice++;
+  std::vector<std::reference_wrapper<ActionModel>> actions;
+  for (const auto &actionId : issue.actions) {
+    actions.emplace_back(m_game.getActions()->getAction(actionId));
   }
 
-  int32_t result;
-  while (true) {
-    std::cout << "Enter a number-> ";
-    std::cin >> result;
-    if (actionIds.size() >= result && issue.chooseAction(actionIds[result])) {
-      break;
-    } else {
-      std::cout << "\nInvalid choice!" << std::endl;
-    }
-  }
+  m_ui.renderIssue(issue, actions);
+
+  // Convert the choice into an action id and ensure its a valid action id
+  const auto validator = [actions, &issue]  (int32_t i) -> bool {
+    if (i >= issue.actions.size()) { return false; }
+    auto id = actions.at(i).get().id;
+    return issue.actionIdIsValid(id);
+  };
+
+  auto result = UIUtils::getInputInt(m_ui.inputBar(),"Please enter a number-> ", validator);
+  issue.chooseAction(actions.at(result).get().id);
   return true;
 }
 
 bool EventObserver::onStoreEntered(ActionModel &action) {
   spdlog::debug("Entered a store!");
-  std::cout << "Items available: \n";
 
-  int32_t choice = 0;
-  auto itemIds = action.item_ids;
-  for (const auto &itemId : itemIds) {
-    auto &item = m_game.getItems()->getItem(itemId);
-    std::cout << "\t" + std::to_string(choice) + ". " +
-    item.display_name << std::endl;
-    choice++;
+  std::vector<std::reference_wrapper<ItemModel>> items;
+  for (const auto &itemId : action.item_ids) {
+    items.emplace_back(m_game.getItems()->getItem(itemId));
   }
-  std::cout << "\t" + std::to_string(choice) + ". Leave store" << std::endl;
 
-  int32_t result;
-  while (true) {
-    std::cout << "Enter the number of an item to purchase it or " +
-    std::to_string(choice) + " to exit -> ";
+  m_ui.renderStore(action, items);
 
-    std::cin >> result;
+  // Convert the choice into an item id and ensure its a valid item id
+  const auto validator = [&action, &items]  (int32_t i) -> bool {
+    if (i > items.size()) { return false; }
+    if (i == items.size()) { return true; } // Is "Leave Store" item.
+    auto id = items.at(i).get().id;
+    return action.itemIsInStock(id);
+  };
 
-    if (result == choice) {
-      break;
-    } else if (result < choice) {
-      action.purchaseItem(itemIds[result]);
-    } else {
-      std::cout << "\nInvalid choice!" << std::endl;
+  int32_t result = -1;
+  // "Leave Store" is added to the items list so its the last item and indicates
+  // that the player wants to.... leave the store.
+  while (result != items.size()) {
+    result = UIUtils::getInputInt(m_ui.inputBar(), "Please enter a number-> ",
+                                  validator);
+
+    // TODO: Validate and update money remaining
+    if (result < items.size()) {
+      action.purchaseItem(items.at(result).get().id);
     }
   }
+  spdlog::debug("Purchase complete");
+  spdlog::default_logger()->flush();
   action.completePurchase();
-
   return true;
 }
 

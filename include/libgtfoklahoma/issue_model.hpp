@@ -41,13 +41,11 @@ struct IssueModel {
   StatModel stat_delta;
   Type type{Type::INVALID};
 
+  [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
   bool chooseAction(int32_t actionId);
   std::future<int32_t> chosenAction();
 
   bool operator==(const IssueModel &rhs) const;
-
-private:
-  [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
 
 private:
   std::promise<int32_t> m_chosenAction;

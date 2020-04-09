@@ -19,6 +19,7 @@ if (BUILD_SAMPLE_CLIENT)
 
     set(CLIENT_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/event_observer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/window.cpp
         main.cpp

@@ -28,10 +28,11 @@ struct ItemModel;
 }
 namespace gtfoklahoma {
 
+class Ui;
 class EventObserver : public libgtfoklahoma::IEventObserver {
 public:
 
-  explicit EventObserver(libgtfoklahoma::Game &game);
+  explicit EventObserver(libgtfoklahoma::Game &game, Ui &ui);
   ~EventObserver() override = default;
 
   void onHourChanged(int32_t hour) override;
@@ -39,5 +40,8 @@ public:
   bool onEvent(libgtfoklahoma::EventModel &event) override;
   bool onIssueOccurred(libgtfoklahoma::IssueModel &issue) override;
   bool onStoreEntered(libgtfoklahoma::ActionModel &action) override;
+
+private:
+  Ui &m_ui;
 };
 } // namespace gtfoklahoma

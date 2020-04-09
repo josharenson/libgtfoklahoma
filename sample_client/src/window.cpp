@@ -23,22 +23,40 @@ using namespace gtfoklahoma;
 
 int32_t WMObject::x() const {
   if (anchors.horizontalCenter > 0) {
-    return anchors.horizontalCenter - (rawWidth() / 2);
+    return anchors.horizontalCenter - (width / 2);
   }
 
-  return anchors.left + margins.left;
+  if (anchors.left >= 0) {
+    return anchors.left + margins.left;
+  }
+
+  if (anchors.right >= 0) {
+    return anchors.right - width - margins.right;
+  }
+
+  spdlog::warn("Not enough information to position x of this Window");
+  return 0;
 }
 
 int32_t WMObject::y() const {
   if (anchors.verticalCenter > 0) {
-    return anchors.verticalCenter - (rawHeight() / 2);
+    return anchors.verticalCenter - (height / 2);
   }
 
-  return anchors.top + margins.top;
+  if (anchors.top >= 0) {
+    return anchors.top + margins.top;
+  }
+
+  if (anchors.bottom >= 0) {
+    return anchors.bottom - height - margins.bottom;
+  }
+
+  spdlog::warn("Not enough information to position y of this Window");
+  return 0;
 }
 
 int32_t WMObject::bottom() const {
-  return y() + rawHeight() + margins.bottom;
+  return y() + height + margins.bottom;
 }
 
 int32_t WMObject::left() const {
@@ -50,39 +68,13 @@ int32_t WMObject::top() const {
 }
 
 int32_t WMObject::right() const {
-  return x() + rawWidth() + margins.right;
+  return x() + width + margins.right;
 }
 
 int32_t WMObject::horizontalCenter() const {
-  return x() + (rawWidth() / 2);
+  return x() + (width / 2);
 }
 
 int32_t WMObject::verticalCenter() const {
-  return y() + (rawHeight() / 2);
+  return y() + (height / 2);
 }
-
-int32_t WMObject::rawHeight() const { return height; }
-int32_t WMObject::rawWidth() const { return width; }
-
-int32_t Window::rawHeight() const {
-  if (heightPercent < 0 && height < 0) {
-    spdlog::warn("Not enough height information to draw window!");
-    return 0;
-  }
-
-  // Absolute values have priority
-  if (height > 0) { return height; }
-  else return (m_termHeight * heightPercent);
-}
-
-int32_t Window::rawWidth() const {
-  if(widthPercent < 0 && width < 0) {
-    spdlog::warn("Not enough width information to draw window!");
-    return 0;
-  }
-
-  // Absolute values have priority
-  if (width > 0) { return width; }
-  else return (m_termWidth * widthPercent);
-}
-

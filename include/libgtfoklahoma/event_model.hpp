@@ -36,7 +36,6 @@ struct EventModel {
 
   bool operator==(const EventModel &rhs) const;
 
-private:
   [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
 
 private:

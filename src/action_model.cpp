@@ -23,6 +23,11 @@ void ActionModel::completePurchase() {
   m_purchasedItems.set_value(m_itemsPendingPurchase);
 }
 
+bool ActionModel::itemIsInStock(int32_t itemId) const {
+  if (!isStoreType()) { return false; }
+  return std::find(item_ids.begin(), item_ids.end(), itemId) != item_ids.end();
+}
+
 void ActionModel::purchaseItem(int32_t id_to_buy) {
   m_itemsPendingPurchase.push_back(id_to_buy);
 }

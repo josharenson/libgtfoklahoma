@@ -19,7 +19,16 @@
 
 #include <spdlog/spdlog.h>
 
+#include <libgtfoklahoma/game.hpp>
+#include <libgtfoklahoma/stat_model.hpp>
+
 using namespace libgtfoklahoma;
+
+Stats::Stats(Game &game, StatModel playerStats)
+: m_game(game)
+, m_playerStats(playerStats) {}
+
+StatModel &Stats::getPlayerStatsModel() { return m_playerStats; }
 
 StatModel Stats::FromJson(const rapidjson::GenericArray<true, rapidjson::Value> &statChangesArray) {
   std::vector<StatNameDeltaPair> result;

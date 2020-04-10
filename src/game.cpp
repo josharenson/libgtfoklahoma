@@ -19,6 +19,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <libgtfoklahoma/stat_model.hpp>
+
 using namespace libgtfoklahoma;
 
 // We need our own observer to keep track of certain changes
@@ -36,20 +38,24 @@ public:
 };
 
 Game::Game(std::string name)
-    : m_actions(std::make_unique<Actions>(*this)), m_currentHour(0),
-      m_currentMile(0), m_events(std::make_unique<Events>(*this)),
-      m_issues(std::make_unique<Issues>(*this)),
-      m_items(std::make_unique<Items>()), m_name(std::move(name)),
-      m_stats(std::make_unique<StatModel>(
-          rules::kDefaultBedtimeHour,
-          rules::kDefaultHealth,
-          0,
-          1,
-          rules::kDefaultMoneyRemaining,
-          rules::kDefaultOddsHealthIssuePerHour,
-          rules::kDefaultOddsMechanicalIssuePerHour,
-          StatModel::Pace::FRED,
-          rules::kDefaultWakeupHour)) {
+: m_actions(std::make_unique<Actions>(*this))
+, m_currentHour(0)
+, m_currentMile(0)
+, m_events(std::make_unique<Events>(*this))
+, m_issues(std::make_unique<Issues>(*this))
+, m_items(std::make_unique<Items>()), m_name(std::move(name))
+, m_stats(std::make_unique<Stats>(
+          *this,
+          StatModel(
+              rules::kDefaultBedtimeHour,
+              rules::kDefaultHealth,
+              0,
+              1,
+              rules::kDefaultMoneyRemaining,
+              rules::kDefaultOddsHealthIssuePerHour,
+              rules::kDefaultOddsMechanicalIssuePerHour,
+              StatModel::Pace::FRED,
+              rules::kDefaultWakeupHour))) {
   m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
 }
 
@@ -65,16 +71,18 @@ Game::Game(std::string name,
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
-, m_stats(std::make_unique<StatModel>(
-        rules::kDefaultBedtimeHour,
-        rules::kDefaultHealth,
-        0,
-        1,
-        rules::kDefaultMoneyRemaining,
-        rules::kDefaultOddsHealthIssuePerHour,
-        rules::kDefaultOddsMechanicalIssuePerHour,
-        StatModel::Pace::FRED,
-        rules::kDefaultWakeupHour)) {
+, m_stats(std::make_unique<Stats>(
+          *this,
+          StatModel(
+              rules::kDefaultBedtimeHour,
+              rules::kDefaultHealth,
+    0,
+       1,
+               rules::kDefaultMoneyRemaining,
+               rules::kDefaultOddsHealthIssuePerHour,
+               rules::kDefaultOddsMechanicalIssuePerHour,
+         StatModel::Pace::FRED,
+               rules::kDefaultWakeupHour))) {
   m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
 }
 
@@ -83,7 +91,7 @@ std::unique_ptr<Actions> &Game::getActions() { return m_actions; }
 std::unique_ptr<Events> &Game::getEvents() { return m_events; }
 std::unique_ptr<Issues> &Game::getIssues() { return m_issues; }
 std::unique_ptr<Items> &Game::getItems() { return m_items; }
-std::unique_ptr<StatModel> &Game::getStats() { return m_stats; }
+std::unique_ptr<Stats> &Game::getStats() { return m_stats; }
 
 /** Distance management */
 int32_t Game::getCurrentMile() const { return m_currentMile; }
@@ -151,13 +159,14 @@ void Game::registerEventObserver(std::unique_ptr<IEventObserver> observer) {
 
 /** Stats managememt */
 bool Game::isAwake() const {
-  return m_currentHour >= m_stats->wakeup_hour &&
-         m_currentHour < m_stats->bedtime_hour;
+  return m_currentHour >= m_stats->getPlayerStatsModel().wakeup_hour &&
+         m_currentHour < m_stats->getPlayerStatsModel().bedtime_hour;
 }
 
-void Game::updateStats(const StatModel &delta) { *m_stats = *m_stats + delta;
+void Game::updateStats(const StatModel &delta) {
+  m_stats->getPlayerStatsModel() = m_stats->getPlayerStatsModel() + delta;
   for (const auto &observer : m_observers) {
-    observer->onStatsChanged(*m_stats);
+    observer->onStatsChanged(m_stats->getPlayerStatsModel());
   }
 }
 

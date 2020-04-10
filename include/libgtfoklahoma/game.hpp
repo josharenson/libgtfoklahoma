@@ -70,7 +70,7 @@ public:
   void registerEventObserver(std::unique_ptr<IEventObserver> observer);
 
   // Stat management
-  std::unique_ptr<StatModel> &getStats();
+  std::unique_ptr<Stats> &getStats();
   [[nodiscard]] bool isAwake() const;
   void updateStats(const StatModel &delta);
 
@@ -88,6 +88,6 @@ private:
   std::unique_ptr<Issues> m_issues;
   std::string m_name;
   std::vector<std::unique_ptr<IEventObserver>> m_observers;
-  std::unique_ptr<StatModel> m_stats;
+  std::unique_ptr<Stats> m_stats;
 };
 }

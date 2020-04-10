@@ -55,7 +55,7 @@ TEST_CASE("Game", "[unit]") {
   }
 
   SECTION("Game::getStats") {
-    auto stats = *game.getStats();
+    auto stats = game.getStats()->getPlayerStatsModel();
     REQUIRE(stats.bedtime_hour == rules::kDefaultBedtimeHour);
     REQUIRE(stats.health == rules::kDefaultHealth);
     REQUIRE(stats.kit_weight == 0);
@@ -69,19 +69,19 @@ TEST_CASE("Game", "[unit]") {
 
   SECTION("Game::updateStats") {
     StatModel deltaModel;
-    const auto &initialStats = game.getStats();
+    const auto &initialStats = game.getStats()->getPlayerStatsModel();
 
     // I don't want to define a copy C'tor just for this...
     StatModel initialModel;
-    initialModel.bedtime_hour = initialStats->bedtime_hour;
-    initialModel.health = initialStats->health;
-    initialModel.kit_weight = initialStats->kit_weight;
-    initialModel.max_mph = initialStats->max_mph;
-    initialModel.money_remaining = initialStats->money_remaining;
-    initialModel.odds_health_issue = initialStats->odds_health_issue;
-    initialModel.odds_mech_issue = initialStats->odds_mech_issue;
-    initialModel.pace = initialStats->pace;
-    initialModel.wakeup_hour = initialStats->wakeup_hour;
+    initialModel.bedtime_hour = initialStats.bedtime_hour;
+    initialModel.health = initialStats.health;
+    initialModel.kit_weight = initialStats.kit_weight;
+    initialModel.max_mph = initialStats.max_mph;
+    initialModel.money_remaining = initialStats.money_remaining;
+    initialModel.odds_health_issue = initialStats.odds_health_issue;
+    initialModel.odds_mech_issue = initialStats.odds_mech_issue;
+    initialModel.pace = initialStats.pace;
+    initialModel.wakeup_hour = initialStats.wakeup_hour;
 
     // Whatever the default is, make sure its updated to something different
     auto expected_pace = initialModel.pace == StatModel::Pace::CHILL_AF
@@ -99,16 +99,16 @@ TEST_CASE("Game", "[unit]") {
     deltaModel.wakeup_hour = 1;
 
     game.updateStats(deltaModel);
-    auto &updatedModel = game.getStats();
+    auto &updatedModel = game.getStats()->getPlayerStatsModel();
 
-    REQUIRE(updatedModel->bedtime_hour == initialModel.bedtime_hour + 1);
-    REQUIRE(updatedModel->health == initialModel.health + 1);
-    REQUIRE(updatedModel->kit_weight == initialModel.kit_weight + 1);
-    REQUIRE(updatedModel->max_mph == initialModel.max_mph + 1);
-    REQUIRE(updatedModel->odds_health_issue == initialModel.odds_health_issue + .1);
-    REQUIRE(updatedModel->odds_mech_issue == initialModel.odds_mech_issue + .1);
-    REQUIRE(updatedModel->pace == expected_pace);
-    REQUIRE(updatedModel->wakeup_hour == initialModel.wakeup_hour + 1);
+    REQUIRE(updatedModel.bedtime_hour == initialModel.bedtime_hour + 1);
+    REQUIRE(updatedModel.health == initialModel.health + 1);
+    REQUIRE(updatedModel.kit_weight == initialModel.kit_weight + 1);
+    REQUIRE(updatedModel.max_mph == initialModel.max_mph + 1);
+    REQUIRE(updatedModel.odds_health_issue == initialModel.odds_health_issue + .1);
+    REQUIRE(updatedModel.odds_mech_issue == initialModel.odds_mech_issue + .1);
+    REQUIRE(updatedModel.pace == expected_pace);
+    REQUIRE(updatedModel.wakeup_hour == initialModel.wakeup_hour + 1);
   }
 }
 

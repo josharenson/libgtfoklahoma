@@ -152,8 +152,8 @@ TEST_CASE("Actions - Store Type Actions") {
     StatModel stats;
     stats.money_remaining = 1; // Make sure there is enough
     game.updateStats(stats);
-    REQUIRE(game.getStats()->money_remaining >= 1);
-    auto initial_money = game.getStats()->money_remaining;
+    REQUIRE(game.getStats()->getPlayerStatsModel().money_remaining >= 1);
+    auto initial_money = game.getStats()->getPlayerStatsModel().money_remaining;
 
     // Tell the mock to purchase the item
     When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action){
@@ -166,7 +166,7 @@ TEST_CASE("Actions - Store Type Actions") {
     auto inventory = game.getInventory();
     REQUIRE(inventory.size() == 1);
     REQUIRE(inventory[0].get().id == 0);
-    auto current_money = game.getStats()->money_remaining;
+    auto current_money = game.getStats()->getPlayerStatsModel().money_remaining;
     REQUIRE(current_money == initial_money - 1);
   }
 }

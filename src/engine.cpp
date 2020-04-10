@@ -57,7 +57,7 @@ void Engine::mainLoop() {
   bool shouldCheckForMechanicalIssues = false;
 
   uint32_t tick = 0;
-  int32_t ticksUntilNextMile = rules::TicksUntilNextMile(*m_game.getStats());
+  int32_t ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats()->getPlayerStatsModel());
 
   while (m_running) {
     std::this_thread::sleep_for(rules::kTickDelayMs);
@@ -75,7 +75,7 @@ void Engine::mainLoop() {
     // Handle any mech issues
     if (shouldCheckForMechanicalIssues &&
         m_game.isAwake() &&
-        rules::MechanicalIssueThisHour(*m_game.getStats())) {
+        rules::MechanicalIssueThisHour(m_game.getStats()->getPlayerStatsModel())) {
       auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::MECHANICAL);
 
       if (id == -1) {
@@ -89,7 +89,7 @@ void Engine::mainLoop() {
     shouldCheckForMechanicalIssues = false;
 
     // Handle any health issues
-    if (shouldCheckForHealthIssues && rules::HealthIssueThisHour(*m_game.getStats())) {
+    if (shouldCheckForHealthIssues && rules::HealthIssueThisHour(m_game.getStats()->getPlayerStatsModel())) {
       auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::HEALTH);
 
       if (id == -1) {
@@ -113,7 +113,7 @@ void Engine::mainLoop() {
     }
 
     if (!ticksUntilNextMile) {
-      ticksUntilNextMile = rules::TicksUntilNextMile(*m_game.getStats());
+      ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats()->getPlayerStatsModel());
       auto new_mile = m_game.getCurrentMile() + 1;
       for (const auto &observer : m_game.getObservers()) {
         observer.get()->onMileChanged(new_mile);

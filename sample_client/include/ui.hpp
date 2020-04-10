@@ -53,9 +53,6 @@ public:
 
   /** Things that happen in the stats window **/
   [[nodiscard]] const Window &statusWindow() const;
-  void renderStats(const std::unique_ptr<libgtfoklahoma::StatModel> &stats,
-                   int32_t mile,
-                   int32_t hour);
   void renderStats(const libgtfoklahoma::StatModel &stats,
                    int32_t mile,
                    int32_t hour);

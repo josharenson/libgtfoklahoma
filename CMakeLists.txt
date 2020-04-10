@@ -31,6 +31,7 @@ set(LIBGTFOKLAHOMA_SOURCES
     ${CMAKE_SOURCE_DIR}/src/item_model.cpp
     ${CMAKE_SOURCE_DIR}/src/items.cpp
     ${CMAKE_SOURCE_DIR}/src/rules.cpp
+    ${CMAKE_SOURCE_DIR}/src/stat_model.cpp
     ${CMAKE_SOURCE_DIR}/src/stats.cpp)
 
 add_library(libgtfoklahoma STATIC ${LIBGTFOKLAHOMA_SOURCES})

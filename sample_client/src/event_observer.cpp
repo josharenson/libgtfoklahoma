@@ -42,12 +42,12 @@ EventObserver::EventObserver(Game &game, Ui &ui)
 
 void EventObserver::onHourChanged(int32_t hour) {
   spdlog::debug("Current hour is {}", hour);
-  m_ui.renderStats(m_game.getStats(), m_game.getCurrentMile(), hour);
+  m_ui.renderStats(m_game.getStats()->getPlayerStatsModel(), m_game.getCurrentMile(), hour);
 }
 
 void EventObserver::onMileChanged(int32_t mile) {
   spdlog::debug("Current mile is {}", mile);
-  m_ui.renderStats(m_game.getStats(), mile, m_game.getCurrentHour());
+  m_ui.renderStats(m_game.getStats()->getPlayerStatsModel(), mile, m_game.getCurrentHour());
 }
 
 bool EventObserver::onEvent(EventModel &event) {

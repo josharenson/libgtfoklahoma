@@ -35,8 +35,8 @@ bool ActionModel::itemIsInStock(int32_t itemId) const {
 
 bool ActionModel::purchaseItem(int32_t id_to_buy) {
   auto &item = m_game.getItems()->getItem(id_to_buy);
-  auto &stats = m_game.getStats();
-  if (item.cost > stats->money_remaining) {
+  auto &stats = m_game.getStats()->getPlayerStatsModel();
+  if (item.cost > stats.money_remaining) {
     spdlog::debug("Your broke ass can't afford this item!");
     return false;
   }

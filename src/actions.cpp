@@ -29,7 +29,8 @@
 using namespace libgtfoklahoma;
 
 Actions::Actions(Game &game, const char *actionJson)
-: m_game(game) {
+: kEmptyActionModel(game)
+, m_game(game) {
 
   rapidjson::Document actionsDocument;
   if (actionsDocument.Parse(actionJson).HasParseError() ||
@@ -70,9 +71,10 @@ Actions::Actions(Game &game, const char *actionJson)
 
   for (const auto &action : actionsDocument.GetArray()) {
     if (actionIsValid(action)) {
-      ActionModel model;
-      model.display_name = action["display_name"].GetString();
+      auto &model = m_actions.emplace(action["id"].GetInt(), ActionModel(m_game)).first->second;
+
       model.id = action["id"].GetInt();
+      model.display_name = action["display_name"].GetString();
       model.type = getActionType(action["type"].GetArray());
 
       if (model.isStatChangeType() && action.HasMember("stat_changes")){
@@ -85,7 +87,6 @@ Actions::Actions(Game &game, const char *actionJson)
         }
       }
 
-      m_actions[model.id] = std::move(model);
     } else {
       spdlog::error("Parsing error when adding an action");
     }
@@ -111,20 +112,8 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
 
   if (action.isStoreType()) {
     observer->onStoreEntered(action);
-    auto purchasedItems = action.purchasedItems().get();
+    action.purchaseComplete().get();
 
-    // Add purchased items to inventory.. Client should validate item prices
-    // but only an idiot would't do backend validation too
-    for (const auto &itemId : purchasedItems) {
-      auto &item = m_game.getItems()->getItem(itemId);
-      if (item.cost <= m_game.getStats()->money_remaining) {
-        // Adding the item subtracts funds automatically
-        m_game.addItemToInventory(itemId);
-      } else {
-        spdlog::warn("Player doesn't have enough money for item {}. "
-                     "Not adding it to the inventory!", itemId);
-      }
-    }
   }
 
   m_actionsThatHaveAlreadyHappened.insert(id);
@@ -137,4 +126,3 @@ bool Actions::actionHasHappened(int32_t actionId) {
 void Actions::setActionsThatHaveAlreadyHappened(std::unordered_set<int32_t> actionIds) {
   m_actionsThatHaveAlreadyHappened = std::move(actionIds);
 }
-

@@ -17,23 +17,35 @@
 
 #include <libgtfoklahoma/action_model.hpp>
 
+#include <spdlog/spdlog.h>
+
+#include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/game.hpp>
+
 using namespace libgtfoklahoma;
 
-void ActionModel::completePurchase() {
-  m_purchasedItems.set_value(m_itemsPendingPurchase);
-}
+ActionModel::ActionModel(Game &game) : m_game(game) {}
+
+void ActionModel::completePurchase() { m_purchaseComplete.set_value(); }
 
 bool ActionModel::itemIsInStock(int32_t itemId) const {
   if (!isStoreType()) { return false; }
   return std::find(item_ids.begin(), item_ids.end(), itemId) != item_ids.end();
 }
 
-void ActionModel::purchaseItem(int32_t id_to_buy) {
-  m_itemsPendingPurchase.push_back(id_to_buy);
+bool ActionModel::purchaseItem(int32_t id_to_buy) {
+  auto &item = m_game.getItems()->getItem(id_to_buy);
+  auto &stats = m_game.getStats();
+  if (item.cost > stats->money_remaining) {
+    spdlog::debug("Your broke ass can't afford this item!");
+    return false;
+  }
+  m_game.addItemToInventory(id_to_buy);
+  return true;
 }
 
-std::future<std::vector<int32_t>> ActionModel::purchasedItems() {
-  return m_purchasedItems.get_future();
+std::future<void> ActionModel::purchaseComplete() {
+  return m_purchaseComplete.get_future();
 }
 bool ActionModel::operator==(const ActionModel &rhs) const {
   return this->id == rhs.id &&

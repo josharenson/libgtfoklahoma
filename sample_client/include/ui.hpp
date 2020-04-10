@@ -56,6 +56,9 @@ public:
   void renderStats(const std::unique_ptr<libgtfoklahoma::StatModel> &stats,
                    int32_t mile,
                    int32_t hour);
+  void renderStats(const libgtfoklahoma::StatModel &stats,
+                   int32_t mile,
+                   int32_t hour);
 
   [[nodiscard]] const Window &inputBar() const;
   [[nodiscard]] const Window &bottomBar() const;

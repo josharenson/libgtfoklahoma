@@ -68,12 +68,12 @@ TEST_CASE("Actions", "[unit]") {
   SECTION("Action::getAction") {
     {
       auto &action = actions->getAction(0);
-      REQUIRE_FALSE(action == Actions::kEmptyActionModel);
+      REQUIRE_FALSE(action == actions->kEmptyActionModel);
     }
 
     {
       auto &action = actions->getAction(-1);
-      REQUIRE(action == Actions::kEmptyActionModel);
+      REQUIRE(action == actions->kEmptyActionModel);
     }
   }
 
@@ -90,12 +90,13 @@ TEST_CASE("Actions", "[unit]") {
   }
 
   SECTION("ActionModel::purchaseItem") {
-      actions->getAction(0).purchaseItem(0);
+      REQUIRE(actions->getAction(0).purchaseItem(0));
       actions->getAction(0).completePurchase();
-      auto purchasedItems = actions->getAction(0).purchasedItems().get();
+      actions->getAction(0).purchaseComplete().get();
+      auto purchasedItems = game.getInventory();
 
       REQUIRE(purchasedItems.size());
-      REQUIRE(purchasedItems[0] == 0);
+      REQUIRE(purchasedItems[0].get().id == 0);
   }
 
   SECTION("ActionModel::is*type") {
@@ -156,7 +157,7 @@ TEST_CASE("Actions - Store Type Actions") {
 
     // Tell the mock to purchase the item
     When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action){
-      action.purchaseItem(0);
+      auto UNUSED = action.purchaseItem(0);
       action.completePurchase();
       return true;
     });

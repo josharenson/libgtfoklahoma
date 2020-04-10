@@ -61,7 +61,7 @@ static const char *validItemJson = R"(
     {
         "id": 0,
         "category": "BIKE",
-        "cost": 42069,
+        "cost": 420,
         "display_name": "Taco Item",
         "image_url": "teapot.svg",
         "stat_changes": [{}]

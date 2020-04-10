@@ -36,14 +36,20 @@ public:
 };
 
 Game::Game(std::string name)
-: m_actions(std::make_unique<Actions>(*this))
-, m_currentHour(0)
-, m_currentMile(0)
-, m_events(std::make_unique<Events>(*this))
-, m_issues(std::make_unique<Issues>(*this))
-, m_items(std::make_unique<Items>())
-, m_name(std::move(name))
-, m_stats(std::make_unique<StatModel>()) {
+    : m_actions(std::make_unique<Actions>(*this)), m_currentHour(0),
+      m_currentMile(0), m_events(std::make_unique<Events>(*this)),
+      m_issues(std::make_unique<Issues>(*this)),
+      m_items(std::make_unique<Items>()), m_name(std::move(name)),
+      m_stats(std::make_unique<StatModel>(
+          rules::kDefaultBedtimeHour,
+          rules::kDefaultHealth,
+          0,
+          1,
+          rules::kDefaultMoneyRemaining,
+          rules::kDefaultOddsHealthIssuePerHour,
+          rules::kDefaultOddsMechanicalIssuePerHour,
+          StatModel::Pace::FRED,
+          rules::kDefaultWakeupHour)) {
   m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
 }
 
@@ -59,7 +65,16 @@ Game::Game(std::string name,
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
 , m_name(std::move(name))
-, m_stats(std::make_unique<StatModel>()) {
+, m_stats(std::make_unique<StatModel>(
+        rules::kDefaultBedtimeHour,
+        rules::kDefaultHealth,
+        0,
+        1,
+        rules::kDefaultMoneyRemaining,
+        rules::kDefaultOddsHealthIssuePerHour,
+        rules::kDefaultOddsMechanicalIssuePerHour,
+        StatModel::Pace::FRED,
+        rules::kDefaultWakeupHour)) {
   m_observers.emplace_back(std::make_unique<InternalObserver>(*this));
 }
 

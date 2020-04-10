@@ -95,7 +95,7 @@ bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
 }
 
 void EventObserver::onStatsChanged(libgtfoklahoma::StatModel &stats) {
-
+  m_ui.renderStats(stats, m_game.getCurrentMile(), m_game.getCurrentHour());
 }
 
 bool EventObserver::onStoreEntered(ActionModel &action) {
@@ -109,11 +109,12 @@ bool EventObserver::onStoreEntered(ActionModel &action) {
   m_ui.renderStore(action, items);
 
   // Convert the choice into an item id and ensure its a valid item id
+  // If the response is valid, attempt to purchase the item.
   const auto validator = [&action, &items]  (int32_t i) -> bool {
     if (i > items.size()) { return false; }
     if (i == items.size()) { return true; } // Is "Leave Store" item.
     auto id = items.at(i).get().id;
-    return action.itemIsInStock(id);
+    return (action.itemIsInStock(id) && action.purchaseItem(items.at(i).get().id));
   };
 
   int32_t result = -1;
@@ -123,10 +124,6 @@ bool EventObserver::onStoreEntered(ActionModel &action) {
     result = UIUtils::getInputInt(m_ui.inputBar(), "Please enter a number-> ",
                                   validator);
 
-    // TODO: Validate and update money remaining
-    if (result < items.size()) {
-      action.purchaseItem(items.at(result).get().id);
-    }
   }
   spdlog::debug("Purchase complete");
   spdlog::default_logger()->flush();

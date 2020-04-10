@@ -32,17 +32,37 @@ namespace libgtfoklahoma {
 struct StatModel {
   enum class Pace {CHILL_AF, FRED, MERCKX};
 
+  // FIXME: Initial speed must be greater than 0 or else calculating ticks/mile causes a FPE_FLTDIV_TRAP
+  explicit StatModel(int32_t bedtimeHour=0,
+                     int32_t health=0,
+                     int32_t kitWeight=0,
+                     int32_t maxMph=1,
+                     int32_t moneyRemaining=0,
+                     double oddsHealthIssue=0,
+                     double oddsMechIssue=0,
+                     Pace pace=Pace::FRED,
+                     int32_t wakeupHour=0)
+  : bedtime_hour(bedtimeHour)
+  , health(health)
+  , kit_weight(kitWeight)
+  , max_mph(maxMph)
+  , money_remaining(moneyRemaining)
+  , odds_health_issue(oddsHealthIssue)
+  , odds_mech_issue(oddsMechIssue)
+  , pace(pace)
+  , wakeup_hour(wakeupHour) {}
+
   // These all need to be 0 so that adding stat deltas don't include these
-  int32_t bedtime_hour {0};
-  int32_t health{0}; // When health is 0, you die
-  int32_t kit_weight{0};
-  int32_t max_mph {0};
-  int32_t money_remaining{0};
-  double odds_health_issue {0};
-  double odds_mech_issue {0};
+  int32_t bedtime_hour;
+  int32_t health; // When health is 0, you die
+  int32_t kit_weight;
+  int32_t max_mph;
+  int32_t money_remaining;
+  double odds_health_issue;
+  double odds_mech_issue;
   // FIXME: this is going to need a dedicated setter
-  Pace pace {Pace::FRED};
-  int32_t wakeup_hour {0};
+  Pace pace;
+  int32_t wakeup_hour;
 
   bool operator== (const StatModel &rhs) const {
     return this->bedtime_hour == rhs.bedtime_hour &&

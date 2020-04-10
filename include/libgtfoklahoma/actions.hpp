@@ -29,9 +29,9 @@ namespace libgtfoklahoma {
 class Game;
 class IEventObserver;
 class Items;
-class Actions {
+class Actions : public std::enable_shared_from_this<Actions> {
 public:
-   explicit Actions(Game &game, const char *actionJson=kActionJson);
+  explicit Actions(Game &game, const char *actionJson=kActionJson);
 
   [[nodiscard]] ActionModel &getAction(int32_t id);
   void handleAction(int32_t id, const std::unique_ptr<IEventObserver> &observer);
@@ -41,7 +41,7 @@ public:
   void setActionsThatHaveAlreadyHappened(std::unordered_set<int32_t> actionIds);
 
 public:
-  inline static ActionModel kEmptyActionModel;
+  ActionModel kEmptyActionModel;
 
 private:
   Game &m_game;

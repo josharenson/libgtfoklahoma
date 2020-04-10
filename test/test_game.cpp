@@ -55,7 +55,16 @@ TEST_CASE("Game", "[unit]") {
   }
 
   SECTION("Game::getStats") {
-    REQUIRE(*game.getStats() == Stats::kDefaultStatModel);
+    auto stats = *game.getStats();
+    REQUIRE(stats.bedtime_hour == rules::kDefaultBedtimeHour);
+    REQUIRE(stats.health == rules::kDefaultHealth);
+    REQUIRE(stats.kit_weight == 0);
+    REQUIRE(stats.max_mph == 1);
+    REQUIRE(stats.money_remaining == rules::kDefaultMoneyRemaining);
+    REQUIRE(stats.odds_health_issue == rules::kDefaultOddsHealthIssuePerHour);
+    REQUIRE(stats.odds_mech_issue == rules::kDefaultOddsMechanicalIssuePerHour);
+    // TODO Pace
+    REQUIRE(stats.wakeup_hour == rules::kDefaultWakeupHour);
   }
 
   SECTION("Game::updateStats") {

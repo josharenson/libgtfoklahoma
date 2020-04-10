@@ -170,6 +170,17 @@ void Ui::renderStats(const std::unique_ptr<StatModel> &stats, int32_t mile, int3
   UIUtils::blitWindow(buf, m_statsWindow);
 }
 
+void Ui::renderStats(const libgtfoklahoma::StatModel &stats, int32_t mile,
+                     int32_t hour) {
+  std::string _hour = "Hour: " + std::to_string(hour);
+  std::string _mile = "Mile: " + std::to_string(mile);
+  std::string _health = "Health: " + std::to_string(stats.health);
+  std::string _money = "Money: " + std::to_string(stats.money_remaining);
+
+  UIUtils::BlitBuffer buf = {_hour, _mile, _health, _money};
+  UIUtils::blitWindow(buf, m_statsWindow);
+}
+
 const Window &Ui::mainWindow() const { return m_mainWindow; }
 const Window &Ui::inventoryWindow() const { return m_inventoryWindow; }
 const Window &Ui::statusWindow() const { return m_statsWindow; }
@@ -205,3 +216,4 @@ void Ui::renderNumberedListView(const NumberedListViewModel &viewModel) {
   buffer.insert(buffer.end(), items.begin(), items.end());
   UIUtils::blitWindow(buffer, viewModel.window);
 }
+

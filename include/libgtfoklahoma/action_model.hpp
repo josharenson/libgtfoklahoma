@@ -19,13 +19,17 @@
 
 #include <cstdint>
 #include <future>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <libgtfoklahoma/stats.hpp>
 
 namespace libgtfoklahoma {
+
+class Game;
 struct ActionModel {
+  explicit ActionModel(Game &game);
 
   // Actions can be more than one type at a time so use a mask
   enum ActionType { NONE = 0, STAT_CHANGE = 1u << 0u, STORE = 1u << 1u };
@@ -39,11 +43,11 @@ struct ActionModel {
   // If action is STORE type
   std::vector<int32_t> item_ids;
   void completePurchase();
-  bool itemIsInStock(int32_t itemId) const;
-  void purchaseItem(int32_t id_to_buy);
-  std::future<std::vector<int32_t>> purchasedItems();
+  [[nodiscard]] bool itemIsInStock(int32_t itemId) const;
+  [[nodiscard]] bool purchaseItem(int32_t id_to_buy);
+  std::future<void> purchaseComplete();
 
-  uint32_t type;
+  uint32_t type{0};
   [[nodiscard]] bool isNoneType() const { return type & ActionType::NONE; }
   [[nodiscard]] bool isStatChangeType() const { return type & ActionType::STAT_CHANGE; }
   [[nodiscard]] bool isStoreType() const { return type & ActionType::STORE; }
@@ -51,7 +55,7 @@ struct ActionModel {
   bool operator==(const ActionModel &rhs) const;
 
 private:
-  std::vector<int32_t> m_itemsPendingPurchase;
-  std::promise<std::vector<int32_t>> m_purchasedItems;
+  Game &m_game;
+  std::promise<void> m_purchaseComplete;
 };
 } // namespace libgtfoklahoma

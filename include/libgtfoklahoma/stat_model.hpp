@@ -25,6 +25,16 @@ struct StatModel {
   enum class Pace {INVALID, CHILL_AF, FRED, MERCKX};
 
   // These all need to be 0 so that adding stat deltas don't include these
+    // FIXME: Initial speed must be greater than 0 or else calculating ticks/mile causes a FPE_FLTDIV_TRAP
+  explicit StatModel(int32_t bedtimeHour=0,
+                     int32_t health=0,
+                     int32_t kitWeight=0,
+                     int32_t maxMph=1,
+                     int32_t moneyRemaining=0,
+                     double oddsHealthIssue=0,
+                     double oddsMechIssue=0,
+                     Pace pace=Pace::INVALID,
+                     int32_t wakeupHour=0);
   int32_t bedtime_hour;
   int32_t health; // When health is 0, you die
   int32_t kit_weight;
@@ -35,16 +45,6 @@ struct StatModel {
   Pace pace;
   int32_t wakeup_hour;
 
-  // FIXME: Initial speed must be greater than 0 or else calculating ticks/mile causes a FPE_FLTDIV_TRAP
-  explicit StatModel(int32_t bedtimeHour=0,
-                     int32_t health=0,
-                     int32_t kitWeight=0,
-                     int32_t maxMph=1,
-                     int32_t moneyRemaining=0,
-                     double oddsHealthIssue=0,
-                     double oddsMechIssue=0,
-                     Pace pace=Pace::INVALID,
-                     int32_t wakeupHour=0);
 
   bool operator== (const StatModel &rhs) const;
   StatModel operator+ (const StatModel &rhs);

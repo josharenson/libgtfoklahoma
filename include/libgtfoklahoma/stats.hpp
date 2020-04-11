@@ -47,7 +47,7 @@ public:
   static StatModel FromJson(const rapidjson::GenericArray<true, rapidjson::Value>& statChangesArray);
 
 public:
-  inline static StatModel kDefaultStatModel;
+    static StatModel kDefaultStatModel;
 
 private:
   Game &m_game;

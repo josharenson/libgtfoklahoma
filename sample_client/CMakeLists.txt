@@ -4,17 +4,16 @@ if (BUILD_SAMPLE_CLIENT)
     ExternalProject_Add(Termbox
         GIT_REPOSITORY "https://github.com/nsf/termbox"
         CONFIGURE_COMMAND
-            pushd <SOURCE_DIR> && ./waf configure && popd;
+            cd <SOURCE_DIR> && ./waf configure
         BUILD_COMMAND
-            pushd <SOURCE_DIR> && ./waf build && popd;
+            cd <SOURCE_DIR> && ./waf build
         INSTALL_COMMAND
-            pushd <SOURCE_DIR> &&
+            cd <SOURCE_DIR> &&
             ./waf install
                 --targets=termbox_static
                 --destdir=<INSTALL_DIR> &&
             mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/include &&
-            cp <SOURCE_DIR>/src/termbox.h ${CMAKE_CURRENT_SOURCE_DIR}/include/ &&
-            popd
+            cp <SOURCE_DIR>/src/termbox.h ${CMAKE_CURRENT_SOURCE_DIR}/include/
     )
 
     set(CLIENT_SOURCES
@@ -34,5 +33,5 @@ if (BUILD_SAMPLE_CLIENT)
             ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
     target_link_directories(sample-client PUBLIC ${TERMBOX_LINK_DIR})
-    target_link_libraries(sample-client PUBLIC libgtfoklahoma termbox)
+    target_link_libraries(sample-client libgtfoklahoma termbox)
 endif(BUILD_SAMPLE_CLIENT)

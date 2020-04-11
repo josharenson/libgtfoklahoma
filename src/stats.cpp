@@ -24,6 +24,8 @@
 
 using namespace libgtfoklahoma;
 
+StatModel Stats::kDefaultStatModel;
+
 Stats::Stats(Game &game, StatModel playerStats)
 : m_game(game)
 , m_playerStats(playerStats) {}

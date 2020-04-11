@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include <libgtfoklahoma/stat_model.hpp>
 #include <libgtfoklahoma/stats.hpp>
 
 namespace libgtfoklahoma {

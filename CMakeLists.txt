@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.10)
 project("libGTFOklahoma")
 set(CMAKE_CXX_STANDARD 17)
 
 include(GNUInstallDirs)
+find_package(Threads REQUIRED)
 
 option(BUILD_SAMPLE_CLIENT "Build the sample client and its dependencies" ON)
 
@@ -41,6 +42,7 @@ target_include_directories(libgtfoklahoma PUBLIC
         ${RAPID_JSON_INCLUDE_DIR}
         ${SPDLOG_INCLUDE_DIR}
         ${SQLITE_ORM_INCLUDE_DIR})
+target_link_libraries(libgtfoklahoma Threads::Threads)    
 
 add_subdirectory(sample_client)
 add_subdirectory(test)

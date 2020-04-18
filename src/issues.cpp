@@ -112,6 +112,11 @@ void Issues::handleIssue(int32_t issueId, const std::unique_ptr<IEventObserver> 
   IssueModel &issue = getIssue(issueId);
   spdlog::debug("Handling issue {}", issueId);
 
+  // If this issue causes the game to end, hint to the ending how it should go down
+  for (const auto &endingId : issue.ending_id_hints) {
+    m_game.pushEndingHintId(endingId);
+  }
+
   std::vector<std::reference_wrapper<ActionModel>> actionModels;
   for (const auto &actionId : issue.actions) {
     actionModels.emplace_back(m_game.getActions()->getAction(actionId));

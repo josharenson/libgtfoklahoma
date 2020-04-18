@@ -40,7 +40,7 @@ TEST_CASE("Items", "[unit]") {
   ]
   )";
 
-  Game game("", validActionJson, validEventJson, validIssueJson, itemJson);
+  Game game("", validActionJson, validEndingJson, validEventJson, validIssueJson, itemJson);
   auto &items = game.getItems();
 
   SECTION("Items::getItem") {

@@ -74,7 +74,7 @@ void Engine::mainLoop() {
 
     // Handle any mech issues
     if (shouldCheckForMechanicalIssues &&
-        m_game.isAwake() &&
+        m_game.playerIsAwake() &&
         rules::MechanicalIssueThisHour(m_game.getStats()->getPlayerStatsModel())) {
       auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::MECHANICAL);
 
@@ -121,9 +121,26 @@ void Engine::mainLoop() {
       shouldCheckForEvents = true;
     }
 
+    if (m_game.gameOver()) {
+      // FIXME: ensure ending is poppable and applicable
+      auto ending = m_game.getEndings()->getEnding(m_game.popEndingHintId());
+      for (const auto &observer : m_game.getObservers()) {
+        observer.get()->onGameOver(ending);
+      }
+      break;
+    }
+
     tick++;
     ticksUntilNextMile--;
   }
+}
+
+void Engine::handleGameOver(int32_t endingId) {
+  auto ending = m_game.getEndings()->getEnding(endingId);
+  for (const auto &observer : m_game.getObservers()) {
+    observer.get()->onGameOver(ending);
+  }
+  stop();
 }
 
 int32_t Engine::getNextHour() const {

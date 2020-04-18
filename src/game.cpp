@@ -29,6 +29,7 @@ public:
     explicit InternalObserver(Game &game)
     : IEventObserver(game) {}
 
+    void onGameOver(EndingModel&) override {}
     void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
     void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
     bool onEvent(EventModel&) override { return false; }
@@ -41,6 +42,7 @@ Game::Game(std::string name)
 : m_actions(std::make_unique<Actions>(*this))
 , m_currentHour(0)
 , m_currentMile(0)
+, m_endings(std::make_unique<Endings>())
 , m_events(std::make_unique<Events>(*this))
 , m_issues(std::make_unique<Issues>(*this))
 , m_items(std::make_unique<Items>()), m_name(std::move(name))
@@ -61,12 +63,14 @@ Game::Game(std::string name)
 
 Game::Game(std::string name,
            const char *actionJson,
+           const char *endingJson,
            const char *eventJson,
            const char *issueJson,
            const char *itemJson)
 : m_actions(std::make_unique<Actions>(*this, actionJson))
 , m_currentHour(0)
 , m_currentMile(0)
+, m_endings(std::make_unique<Endings>(endingJson))
 , m_events(std::make_unique<Events>(*this, eventJson))
 , m_issues(std::make_unique<Issues>(*this, issueJson))
 , m_items(std::make_unique<Items>(itemJson))
@@ -96,6 +100,30 @@ std::unique_ptr<Stats> &Game::getStats() { return m_stats; }
 /** Distance management */
 int32_t Game::getCurrentMile() const { return m_currentMile; }
 void Game::setCurrentMile(const int32_t mile) { m_currentMile = mile; }
+
+/** Ending management */
+bool Game::gameOver() {
+  return m_stats->getPlayerStatsModel().health <= 0 ||
+         !m_events->hasMoreEvents(m_currentMile);
+}
+
+std::unique_ptr<Endings> &Game::getEndings() { return m_endings; }
+
+int32_t Game::popEndingHintId() {
+  if (m_endingHints.empty()) {
+    spdlog::error("Trying to end the game but there are no ending hints on the "
+                  "ending stack!");
+    return -1;
+  }
+
+  auto result = m_endingHints.top();
+  m_endingHints.pop();
+  return result;
+}
+
+void Game::pushEndingHintId(int32_t endingId) {
+  m_endingHints.push(endingId);
+}
 
 /** Event management */
 std::vector<int32_t> Game::getQueuedEventIds() const {
@@ -158,7 +186,7 @@ void Game::registerEventObserver(std::unique_ptr<IEventObserver> observer) {
 }
 
 /** Stats managememt */
-bool Game::isAwake() const {
+bool Game::playerIsAwake() const {
   return m_currentHour >= m_stats->getPlayerStatsModel().wakeup_hour &&
          m_currentHour < m_stats->getPlayerStatsModel().bedtime_hour;
 }
@@ -173,4 +201,3 @@ void Game::updateStats(const StatModel &delta) {
 /** Time management */
 int32_t Game::getCurrentHour() const { return m_currentHour; }
 void Game::setCurrentHour(int32_t hour) { m_currentHour = hour; }
-

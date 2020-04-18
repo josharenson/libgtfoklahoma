@@ -77,6 +77,12 @@ Actions::Actions(Game &game, const char *actionJson)
       model.display_name = action["display_name"].GetString();
       model.type = getActionType(action["type"].GetArray());
 
+      if (action.HasMember("ending_id_hints") && action["ending_id_hints"].IsArray()) {
+        for (const auto &endingId : action["ending_id_hints"].GetArray()) {
+          model.ending_id_hints.emplace_back(endingId.GetInt());
+        }
+      }
+
       if (model.isStatChangeType() && action.HasMember("stat_changes")){
         model.stat_delta = Stats::FromJson(action["stat_changes"].GetArray());
       }
@@ -106,6 +112,11 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
   ActionModel &action = getAction(id);
   spdlog::debug("Performing action {}", id);
 
+  // If this action causes the game to end, hint to the engine how it should go down
+  for (const auto &endingId : action.ending_id_hints) {
+    m_game.pushEndingHintId(endingId);
+  }
+
   if (action.isStatChangeType()) {
     m_game.updateStats(action.stat_delta);
   }
@@ -113,7 +124,6 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
   if (action.isStoreType()) {
     observer->onStoreEntered(action);
     action.purchaseComplete().get();
-
   }
 
   m_actionsThatHaveAlreadyHappened.insert(id);

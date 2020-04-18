@@ -18,9 +18,14 @@
 #include <catch2/catch.hpp>
 #include <catch/fakeit.hpp>
 
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+
 #include "helpers.hpp"
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/engine.hpp>
 #include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/game.hpp>
 
@@ -62,7 +67,7 @@ TEST_CASE("Actions", "[unit]") {
   ]
   )";
 
-  Game game("", actionJson, validEventJson, validIssueJson, validItemJson);
+  Game game("", actionJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
   auto &actions = game.getActions();
 
   SECTION("Action::getAction") {
@@ -113,6 +118,82 @@ TEST_CASE("Actions", "[unit]") {
   }
 }
 
+namespace TestActionEndingHints {
+std::mutex mutex;
+bool running = true;
+std::condition_variable simulation;
+const std::chrono::milliseconds timeout(1000);
+} // namespace TestActionEndingHints
+TEST_CASE("Actions - Ending hints") {
+
+
+  const char *eventJson = R"(
+  [
+    {
+      "id": 0,
+      "action_ids": [0],
+      "description": "",
+      "display_name": "",
+      "mile": 0,
+    }
+  ]
+  )";
+
+  const char *actionsJson = R"(
+  [
+    {
+      "display_name": "",
+      "ending_id_hints": [0],
+      "id": 0,
+      "items": [0],
+      "stat_changes": [
+        {"health": -10000}
+      ],
+      "type": ["STAT_CHANGE"]
+    }
+  ]
+  )";
+
+
+  Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+
+  // We can't mock this because ownership is transfered and then blah blah
+  // deleting an object that was already deleted something custom deleter didn't work
+  // without crazy templates everywhere so screw it.
+  class NonsenseObserver : public IEventObserver {
+  public:
+    explicit NonsenseObserver(Game &game) : IEventObserver(game) {}
+    void onGameOver(EndingModel &ending) override {
+      REQUIRE(ending.id == 0);
+      TestActionEndingHints::running = false;
+      TestActionEndingHints::simulation.notify_one();
+    }
+    void onHourChanged(int32_t hour) override {}
+    void onMileChanged(int32_t mile) override {}
+    bool onEvent(EventModel &event) override {
+      event.chooseAction(0);
+      return true;
+    }
+    bool onIssueOccurred(IssueModel &issue) override { return false; }
+    void onStatsChanged(StatModel &stats) override {}
+    bool onStoreEntered(ActionModel &action) override { return false; }
+  };
+
+  auto observer = std::make_unique<NonsenseObserver>(game);
+  game.registerEventObserver(std::move(observer));
+
+  Engine engine(game);
+  engine.start();
+
+  std::unique_lock<std::mutex> lock(TestActionEndingHints::mutex);
+  if (!TestActionEndingHints::simulation.wait_until(
+          lock,
+          std::chrono::system_clock::now() + TestActionEndingHints::timeout,
+          []() { return !TestActionEndingHints::running; })) {
+    FAIL("Timed out while waiting for the test to simulate death. Profound.");
+  }
+}
+
 TEST_CASE("Actions - Store Type Actions") {
   // Describe a store we can enter
   const char *actionsJson = R"(
@@ -141,10 +222,9 @@ TEST_CASE("Actions - Store Type Actions") {
 
   Mock<IEventObserver> mockObserver;
   Fake(Dtor(mockObserver));
-
   auto mockObserverPtr = std::unique_ptr<IEventObserver>(&mockObserver.get());
 
-  Game game("", actionsJson, validEventJson, validIssueJson, itemsJson);
+  Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, itemsJson);
   //Engine engine(game);
   //engine.registerEventObserver(std::move(mockObserverPtr));
 

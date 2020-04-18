@@ -27,6 +27,7 @@ namespace libgtfoklahoma {
 
 class Game;
 class ActionModel;
+struct EndingModel;
 struct EventModel;
 struct IssueModel;
 struct ItemModel;
@@ -39,12 +40,18 @@ public:
 
   virtual ~IEventObserver() = default;
 
-  /*
-   * @param hour The hour of the day 0 - 23.
+  /**
+   * @param ending An EndingModel describing how the game ended
+   */
+  virtual void onGameOver(EndingModel &ending) = 0;
+
+
+  /**
+   * @param hour The hour of the day, 0 - 23
    */
   virtual void onHourChanged(int32_t hour) = 0;
 
-  /*
+  /**
    * @param mile The current mile of the journey. Wouldn't be very Texan to use
    * kilometers...
    */
@@ -57,20 +64,17 @@ public:
   virtual bool onEvent(EventModel &event) = 0;
 
   /**
-   *
    * @param issue - A reference to the IssueModel that occurred
    * @return true if this observer is responsible for handling this action
    */
   virtual bool onIssueOccurred(IssueModel &issue) = 0;
 
   /**
-   *
    * @param stats - A reference to the updated stat model
    */
   virtual void onStatsChanged(StatModel &stats) = 0;
 
   /**
-   *
    * @param action - A referene to the action that triggered entering the store
    * @return true if this observer is responsible for handling this action
    */

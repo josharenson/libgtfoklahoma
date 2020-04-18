@@ -20,9 +20,11 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <stack>
 #include <string>
 
 #include <libgtfoklahoma/actions.hpp>
+#include <libgtfoklahoma/endings.hpp>
 #include <libgtfoklahoma/event_observer.hpp>
 #include <libgtfoklahoma/events.hpp>
 #include <libgtfoklahoma/issues.hpp>
@@ -37,6 +39,7 @@ public:
   explicit Game(std::string name);
   explicit Game(std::string name,
                 const char *actionJson,
+                const char *endingJson,
                 const char *eventJson,
                 const char *issueJson,
                 const char *itemJson);
@@ -48,9 +51,15 @@ public:
   [[nodiscard]] int32_t getCurrentMile() const;
   void setCurrentMile(int32_t mile);
 
+  // Ending management
+  bool gameOver();
+  std::unique_ptr<Endings> &getEndings();
+
   // Event management
   std::unique_ptr<Events> &getEvents();
   [[nodiscard]] std::vector<int32_t> getQueuedEventIds() const;
+  [[nodiscard]] int32_t popEndingHintId();
+  void pushEndingHintId(int32_t endingId);
 
   // Inventory management
   void addItemToInventory(int32_t id, int32_t quantity=1);
@@ -71,7 +80,7 @@ public:
 
   // Stat management
   std::unique_ptr<Stats> &getStats();
-  [[nodiscard]] bool isAwake() const;
+  [[nodiscard]] bool playerIsAwake() const;
   void updateStats(const StatModel &delta);
 
   // Time management
@@ -82,6 +91,8 @@ private:
   std::unique_ptr<Actions> m_actions;
   int32_t m_currentHour;
   int32_t m_currentMile;
+  std::unique_ptr<Endings> m_endings;
+  std::stack<int32_t> m_endingHints;
   std::unique_ptr<Events> m_events;
   std::map<int32_t, int32_t> m_inventory;
   std::unique_ptr<Items> m_items;

@@ -18,37 +18,13 @@
 #pragma once
 
 #include <cstdint>
-#include <future>
 #include <string>
-#include <vector>
-
-#include <libgtfoklahoma/stats.hpp>
 
 namespace libgtfoklahoma {
-struct IssueModel {
-  enum class Type { INVALID, HEALTH, MECHANICAL };
+struct EndingModel {
   int32_t id{-1};
-  std::vector<int32_t> actions;
-
-  // This event will only happen if all dependent actions have also happened
-  std::vector<int32_t> dependent_actions;
-
-  // This event will only happen if all dependent items are in inventory
-  std::vector<int32_t> dependent_inventory;
   std::string description;
   std::string display_name;
-  std::vector<int32_t> ending_id_hints;
-  std::string image_url;
-  StatModel stat_delta;
-  Type type{Type::INVALID};
-
-  [[nodiscard]] bool actionIdIsValid(int32_t actionId) const;
-  bool chooseAction(int32_t actionId);
-  std::future<int32_t> chosenAction();
-
-  bool operator==(const IssueModel &rhs) const;
-
-private:
-  std::promise<int32_t> m_chosenAction;
+  std::string image_tag;
 };
 } // namespace libgtfoklahoma

@@ -15,34 +15,5 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <catch2/catch.hpp>
 
-#include <atomic>
-#include <memory>
-#include <thread>
-#include <vector>
-
-
-namespace libgtfoklahoma {
-
-class Game;
-class Engine {
-public:
-  explicit Engine(Game &game);
-  ~Engine();
-
-  void start();
-  void stop();
-
-private:
-  void handleGameOver(int32_t endingId);
-  int32_t getNextHour() const;
-  void mainLoop();
-
-private:
-  Game &m_game;
-
-  std::thread m_eventLoopThread;
-  std::atomic<bool> m_running;
-};
-}

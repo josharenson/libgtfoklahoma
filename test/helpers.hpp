@@ -31,6 +31,17 @@ static const char *validActionJson = R"(
   ]
   )";
 
+static const char *validEndingJson = R"(
+  [
+    {
+      "id": 0,
+      "description": "description_0",
+      "display_name": "display_name_0",
+      "image_tag": "image_tag_0"
+    }
+  ]
+  )";
+
 static const char *validEventJson = R"(
   [
     {

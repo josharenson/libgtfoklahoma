@@ -27,6 +27,7 @@ struct EventModel {
   int32_t id;
 
   std::vector<int32_t> action_ids;
+  std::vector<int32_t> ending_id_hints;
   std::string description;
   std::string display_name;
   int32_t mile{-1};

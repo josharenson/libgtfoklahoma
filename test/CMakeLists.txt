@@ -1,6 +1,7 @@
 add_executable(test-game
         run.cpp
         test_actions.cpp
+        test_endings.cpp
         test_events.cpp
         test_game.cpp
         test_issues.cpp

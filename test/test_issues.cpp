@@ -51,7 +51,7 @@ TEST_CASE("Issues", "[unit]") {
   ]
   )";
 
-  Game game("", validActionJson, validEventJson, issuesJson, validItemJson);
+  Game game("", validActionJson, validEndingJson, validEventJson, issuesJson, validItemJson);
   auto &issues = game.getIssues();
 
   SECTION("Issues::popRandomIssue") {

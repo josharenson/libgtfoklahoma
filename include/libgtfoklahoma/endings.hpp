@@ -17,32 +17,33 @@
 
 #pragma once
 
-#include <atomic>
-#include <memory>
-#include <thread>
-#include <vector>
+#include <cstdint>
+#include <unordered_map>
 
+#include <libgtfoklahoma/ending_model.hpp>
 
 namespace libgtfoklahoma {
 
-class Game;
-class Engine {
+class Endings {
 public:
-  explicit Engine(Game &game);
-  ~Engine();
+  explicit Endings(const char *endingsJson = kEndingsJson);
+  EndingModel &getEnding(int32_t id);
 
-  void start();
-  void stop();
+  void handleEnding(int32_t id);
 
+  inline static EndingModel kEmptyEndingModel;
 private:
-  void handleGameOver(int32_t endingId);
-  int32_t getNextHour() const;
-  void mainLoop();
+  std::unordered_map<int32_t, EndingModel> m_endings;
 
-private:
-  Game &m_game;
-
-  std::thread m_eventLoopThread;
-  std::atomic<bool> m_running;
+  inline static const char *kEndingsJson = R"(
+  [
+    {
+      "id": 0,
+      "description": "Your poor health choices caught up to you. Sometimes you eat the bar, and sometimes the bar eats you.",
+      "display_name": "Rest In Power.",
+      "image_tag": "health_death"
+    }
+  ]
+  )";
 };
-}
+} // namespace libgtfoklahoma

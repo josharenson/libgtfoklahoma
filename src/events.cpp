@@ -81,6 +81,12 @@ EventModel &Events::getEvent(int32_t id) {
 
 void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
   auto &event = getEvent(id);
+
+  // If this event causes the game to end, hint to the engine which ending to use
+  for (const auto &endingId : event.ending_id_hints) {
+    m_game.pushEndingHintId(endingId);
+  }
+
   std::vector<std::reference_wrapper<ActionModel>> actionModels;
   for (const auto &actionId : event.action_ids) {
     actionModels.emplace_back(m_game.getActions()->getAction(actionId));

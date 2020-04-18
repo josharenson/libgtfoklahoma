@@ -36,6 +36,7 @@ struct ActionModel {
   enum ActionType { NONE = 0, STAT_CHANGE = 1u << 0u, STORE = 1u << 1u };
 
   int32_t id{-1};
+  std::vector<int32_t> ending_id_hints;
   std::string display_name;
 
   // If action is STAT_CHANGE type

@@ -26,5 +26,6 @@ struct EndingModel {
   std::string description;
   std::string display_name;
   std::string image_tag;
+  uint32_t score{0}; // Set by engine on game over
 };
 } // namespace libgtfoklahoma

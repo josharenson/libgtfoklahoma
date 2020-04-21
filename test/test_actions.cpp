@@ -126,15 +126,14 @@ const std::chrono::milliseconds timeout(1000);
 } // namespace TestActionEndingHints
 TEST_CASE("Actions - Ending hints") {
 
-
   const char *eventJson = R"(
   [
     {
       "id": 0,
-      "action_ids": [0],
+      "actions": [0],
       "description": "",
       "display_name": "",
-      "mile": 0,
+      "mile": 0
     }
   ]
   )";
@@ -154,8 +153,7 @@ TEST_CASE("Actions - Ending hints") {
   ]
   )";
 
-
-  Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+  Game game("", actionsJson, validEndingJson, eventJson, validIssueJson, validItemJson);
 
   // We can't mock this because ownership is transfered and then blah blah
   // deleting an object that was already deleted something custom deleter didn't work

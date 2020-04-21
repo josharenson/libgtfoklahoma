@@ -53,7 +53,7 @@ void Engine::mainLoop() {
   bool shouldCheckForEvents = true;
 
   // Issues are checked once per hour
-  bool shouldCheckForHealthIssues = false;
+  bool shouldCheckForHealthIssues = true;
   bool shouldCheckForMechanicalIssues = false;
 
   uint32_t tick = 0;
@@ -137,6 +137,7 @@ void Engine::mainLoop() {
 
 void Engine::handleGameOver(int32_t endingId) {
   auto ending = m_game.getEndings()->getEnding(endingId);
+  ending.score = 100000;
   for (const auto &observer : m_game.getObservers()) {
     observer.get()->onGameOver(ending);
   }

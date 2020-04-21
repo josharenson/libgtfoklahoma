@@ -17,9 +17,13 @@
 
 #include <catch2/catch.hpp>
 
+#include "helpers.hpp"
+
+#include <libgtfoklahoma/engine.hpp>
 #include <libgtfoklahoma/game.hpp>
 
 using namespace libgtfoklahoma;
+using namespace testhelpers;
 
 TEST_CASE("Game", "[unit]") {
   Game game("");
@@ -109,6 +113,66 @@ TEST_CASE("Game", "[unit]") {
     REQUIRE(updatedModel.odds_mech_issue == initialModel.odds_mech_issue + .1);
     REQUIRE(updatedModel.pace == expected_pace);
     REQUIRE(updatedModel.wakeup_hour == initialModel.wakeup_hour + 1);
+  }
+}
+
+namespace TestGamEndings {
+std::mutex mutex;
+bool running = true;
+std::condition_variable simulation;
+const std::chrono::milliseconds timeout(1000);
+}
+TEST_CASE("Game - EndingStack") {
+  SECTION("Events make correct stack") {
+    const char *eventJson = R"(
+    [
+      {
+        "id": 0,
+        "actions": [0],
+        "ending_id_hints": [0],
+        "description": "",
+        "display_name": "",
+        "mile": 0
+      }
+    ]
+  )";
+
+    class SuicideObserver : public IEventObserver {
+    public:
+      explicit SuicideObserver(Game &game) : IEventObserver(game) {}
+      void onGameOver(EndingModel &ending) override {
+        REQUIRE(ending.id == 0);
+        // There should be none left, and -1 is invalid
+        REQUIRE(m_game.popEndingHintId() == -1);
+        TestGamEndings::running = false;
+        TestGamEndings::simulation.notify_one();
+      }
+      void onHourChanged(int32_t hour) override {}
+      void onMileChanged(int32_t mile) override {}
+      bool onEvent(EventModel &event) override {
+        event.chooseAction(0);
+        return true;
+      }
+      bool onIssueOccurred(IssueModel &issue) override { return false; }
+      void onStatsChanged(StatModel &stats) override {}
+      bool onStoreEntered(ActionModel &action) override { return false; }
+    };
+    Game game("", validActionJson, validEndingJson, eventJson, validIssueJson, validItemJson);
+
+    auto observer = std::make_unique<SuicideObserver>(game);
+    game.registerEventObserver(std::move(observer));
+
+    Engine engine(game);
+    engine.start();
+
+    std::unique_lock<std::mutex> lock(TestGamEndings::mutex);
+    if (!TestGamEndings::simulation.wait_until(
+        lock,
+        std::chrono::system_clock::now() + TestGamEndings::timeout,
+        []() { return !TestGamEndings::running; })) {
+      FAIL("Timed out while waiting for the test to simulate death. Profound.");
+    }
+
   }
 }
 

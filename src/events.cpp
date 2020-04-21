@@ -61,6 +61,11 @@ Events::Events(Game &game, const char *eventJson)
     EventModel model;
     model.id = event["id"].GetInt();
     model.action_ids = idsFromArray(event["actions"].GetArray());
+    if (event.HasMember("ending_id_hints") && event["ending_id_hints"].IsArray()) {
+      for (const auto &endingId : event["ending_id_hints"].GetArray()) {
+        model.ending_id_hints.emplace_back(endingId.GetInt());
+      }
+    }
     model.description = event["description"].GetString();
     model.display_name = event["display_name"].GetString();
     model.mile = event["mile"].GetInt();
@@ -81,23 +86,17 @@ EventModel &Events::getEvent(int32_t id) {
 
 void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
   auto &event = getEvent(id);
+  bool shouldHandle = observer && observer->onEvent(event);
+  if (!shouldHandle) { return; }
 
   // If this event causes the game to end, hint to the engine which ending to use
   for (const auto &endingId : event.ending_id_hints) {
     m_game.pushEndingHintId(endingId);
   }
 
-  std::vector<std::reference_wrapper<ActionModel>> actionModels;
-  for (const auto &actionId : event.action_ids) {
-    actionModels.emplace_back(m_game.getActions()->getAction(actionId));
-  }
-
-  bool blockUntilResponse = observer->onEvent(event);
-  if (blockUntilResponse) {
-    auto actionId = event.chosenAction().get();
-    auto &actions = m_game.getActions();
-    actions->handleAction(actionId, observer);
-  }
+  auto actionId = event.chosenAction().get();
+  auto &actions = m_game.getActions();
+  actions->handleAction(actionId, observer);
 }
 
 std::vector<int32_t> Events::eventsAtMile(int32_t mile) {

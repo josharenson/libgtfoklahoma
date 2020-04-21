@@ -65,6 +65,10 @@ StatModel Stats::FromString(const std::vector<StatNameDeltaPair> &statFields) {
       result.bedtime_hour = std::get<int32_t>(field.second);
     }
 
+    if (field.first == "health") {
+      result.health = std::get<int32_t>(field.second);
+    }
+
     else if (field.first == "kit_weight") {
       result.kit_weight = std::get<int32_t>(field.second);
     }

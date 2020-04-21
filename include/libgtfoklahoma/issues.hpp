@@ -70,7 +70,7 @@ private:
       "description": "Probably shouldn't have shared a joint with a stranger :-/ You have a fever, trouble breathing, and a dry cough.",
       "display_name": "You have COVID-19",
       "dependent_actions": [20],
-      "ending_hints": [0],
+      "ending_id_hints": [0],
       "image_url": "",
       "stat_changes": [
         {"health": -60},

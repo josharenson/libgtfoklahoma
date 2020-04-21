@@ -72,6 +72,9 @@ Issues::Issues(Game &game, const char *issuesJson)
 
     IssueModel model;
     model.id = issue["id"].GetInt();
+    for (const auto &actionId : issue["actions"].GetArray()) {
+      model.actions.emplace_back(actionId.GetInt());
+    }
     model.description = issue["description"].GetString();
     model.display_name = issue["display_name"].GetString();
     model.image_url = issue["image_url"].GetString();
@@ -83,6 +86,12 @@ Issues::Issues(Game &game, const char *issuesJson)
 
     if (issue.HasMember("dependent_inventory") && issue["dependent_inventory"].IsArray()) {
       model.dependent_inventory = idsFromArray(issue["dependent_inventory"].GetArray());
+    }
+
+    if (issue.HasMember("ending_id_hints") && issue["ending_id_hints"].IsArray()) {
+      for (const auto &endingId : issue["ending_id_hints"].GetArray()) {
+        model.ending_id_hints.emplace_back(endingId.GetInt());
+      }
     }
 
     if (issue.HasMember("stat_changes") && issue["stat_changes"].IsArray()) {
@@ -110,23 +119,17 @@ IssueModel &Issues::getIssue(int32_t id) {
 
 void Issues::handleIssue(int32_t issueId, const std::unique_ptr<IEventObserver> &observer) {
   IssueModel &issue = getIssue(issueId);
+  bool shouldHandle = observer && observer->onIssueOccurred(issue);
+  if (!shouldHandle) { return; }
+
   spdlog::debug("Handling issue {}", issueId);
 
-  // If this issue causes the game to end, hint to the ending how it should go down
   for (const auto &endingId : issue.ending_id_hints) {
     m_game.pushEndingHintId(endingId);
   }
 
-  std::vector<std::reference_wrapper<ActionModel>> actionModels;
-  for (const auto &actionId : issue.actions) {
-    actionModels.emplace_back(m_game.getActions()->getAction(actionId));
-  }
-
-  bool shouldHandle = observer ? observer->onIssueOccurred(issue) : false;
-  if (shouldHandle) {
-    auto actionId = issue.chosenAction().get();
-    m_game.getActions()->handleAction(actionId, observer);
-  }
+  auto actionId = issue.chosenAction().get();
+  m_game.getActions()->handleAction(actionId, observer);
 
   // A valid issue exists. Mark it as having happened and apply the stat delta
   m_issuesThatHaveAlreadyHappened.insert(issueId);

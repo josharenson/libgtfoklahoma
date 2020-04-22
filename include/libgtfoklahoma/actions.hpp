@@ -34,7 +34,7 @@ public:
   explicit Actions(Game &game, const char *actionJson=kActionJson);
 
   [[nodiscard]] ActionModel &getAction(int32_t id);
-  void handleAction(int32_t id, const std::unique_ptr<IEventObserver> &observer);
+  void handleAction(int32_t id, const std::shared_ptr<IEventObserver> &observer);
 
   // For things that are dependent on actions having occurred
   bool actionHasHappened(int32_t actionId);
@@ -74,7 +74,7 @@ private:
       "id": 20,
       "display_name": "Spark a doobie",
       "type": ["STAT_CHANGE"],
-      "stat_changes": [
+      "stat_changes_regardless": [
         {"max_mph": 1}
       ]
     }

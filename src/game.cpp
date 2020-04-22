@@ -29,24 +29,25 @@ public:
     explicit InternalObserver(Game &game)
     : IEventObserver(game) {}
 
-    void onGameOver(EndingModel&) override {}
+    void onGameOver(const EndingModel&) override {}
     void onHourChanged(int32_t hour) override { m_game.setCurrentHour(hour); }
     void onMileChanged(int32_t mile) override { m_game.setCurrentMile(mile); }
     bool onEvent(EventModel&) override { return false; }
     bool onIssueOccurred(IssueModel&) override { return false; }
-    void onStatsChanged(StatModel&) override {}
+    void onStatsChanged(const StatModel&) override {}
     bool onStoreEntered(ActionModel&) override { return false; }
 };
 
 Game::Game(std::string name)
-: m_actions(std::make_unique<Actions>(*this))
+: m_actions(Actions(*this))
 , m_currentHour(0)
 , m_currentMile(0)
-, m_endings(std::make_unique<Endings>())
-, m_events(std::make_unique<Events>(*this))
-, m_issues(std::make_unique<Issues>(*this))
-, m_items(std::make_unique<Items>()), m_name(std::move(name))
-, m_stats(std::make_unique<Stats>(
+, m_endings(Endings())
+, m_events(Events(*this))
+, m_issues(Issues(*this))
+, m_items(Items())
+, m_name(std::move(name))
+, m_stats(Stats(
           *this,
           StatModel(
               rules::kDefaultBedtimeHour,
@@ -67,15 +68,15 @@ Game::Game(std::string name,
            const char *eventJson,
            const char *issueJson,
            const char *itemJson)
-: m_actions(std::make_unique<Actions>(*this, actionJson))
+: m_actions(Actions(*this, actionJson))
 , m_currentHour(0)
 , m_currentMile(0)
-, m_endings(std::make_unique<Endings>(endingJson))
-, m_events(std::make_unique<Events>(*this, eventJson))
-, m_issues(std::make_unique<Issues>(*this, issueJson))
-, m_items(std::make_unique<Items>(itemJson))
+, m_endings(Endings(endingJson))
+, m_events(Events(*this, eventJson))
+, m_issues(Issues(*this, issueJson))
+, m_items(Items(itemJson))
 , m_name(std::move(name))
-, m_stats(std::make_unique<Stats>(
+, m_stats(Stats(
           *this,
           StatModel(
               rules::kDefaultBedtimeHour,
@@ -91,11 +92,11 @@ Game::Game(std::string name,
 }
 
 /** Access game components */
-std::unique_ptr<Actions> &Game::getActions() { return m_actions; }
-std::unique_ptr<Events> &Game::getEvents() { return m_events; }
-std::unique_ptr<Issues> &Game::getIssues() { return m_issues; }
-std::unique_ptr<Items> &Game::getItems() { return m_items; }
-std::unique_ptr<Stats> &Game::getStats() { return m_stats; }
+Actions &Game::getActions() { return m_actions; }
+Events &Game::getEvents() { return m_events; }
+Issues &Game::getIssues() { return m_issues; }
+Items &Game::getItems() { return m_items; }
+Stats &Game::getStats() { return m_stats; }
 
 /** Distance management */
 int32_t Game::getCurrentMile() const { return m_currentMile; }
@@ -103,11 +104,11 @@ void Game::setCurrentMile(const int32_t mile) { m_currentMile = mile; }
 
 /** Ending management */
 bool Game::gameOver() {
-  return m_stats->getPlayerStatsModel().health <= 0 ||
-         !m_events->hasMoreEvents(m_currentMile);
+  return m_stats.getPlayerStatsModel().health <= 0 ||
+         !m_events.hasMoreEvents(m_currentMile);
 }
 
-std::unique_ptr<Endings> &Game::getEndings() { return m_endings; }
+Endings &Game::getEndings() { return m_endings; }
 
 int32_t Game::popEndingHintId() {
   if (m_endingHints.empty()) {
@@ -127,12 +128,12 @@ void Game::pushEndingHintId(int32_t endingId) {
 
 /** Event management */
 std::vector<int32_t> Game::getQueuedEventIds() const {
- return m_events->eventsAtMile(m_currentMile);
+ return m_events.eventsAtMile(m_currentMile);
 }
 
 /** Inventory management */
 void Game::addItemToInventory(int32_t id, int32_t quantity) {
-  auto item = getItems()->getItem(id);
+  auto item = getItems().getItem(id);
   for (int i = 0; i < quantity; i ++) {
     updateStats(item.stat_delta);
   }
@@ -161,40 +162,37 @@ bool Game::hasItemInInventory(int32_t id) const {
   return m_inventory.count(id);
 }
 
-std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() const {
+std::vector<std::reference_wrapper<ItemModel>> Game::getInventory() {
   std::vector<std::reference_wrapper<ItemModel>> result;
   for (const auto &item : m_inventory) {
     for (int i = 0; i < item.second; i++) {
-      result.emplace_back(m_items->getItem(item.first));
+      result.emplace_back(m_items.getItem(item.first));
     }
   }
   return result;
 }
 
 /** Observer management */
-std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>>
+std::vector<std::shared_ptr<IEventObserver>>
 Game::getObservers() {
-  std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>> result;
-  for (auto &observer : m_observers) {
-    result.emplace_back(observer);
-  }
-  return result;
+  return m_observers;
 }
 
-void Game::registerEventObserver(std::unique_ptr<IEventObserver> observer) {
+void Game::registerEventObserver(std::shared_ptr<IEventObserver> observer) {
   m_observers.emplace_back(std::move(observer));
 }
 
-/** Stats managememt */
+/** Stats management */
 bool Game::playerIsAwake() const {
-  return m_currentHour >= m_stats->getPlayerStatsModel().wakeup_hour &&
-         m_currentHour < m_stats->getPlayerStatsModel().bedtime_hour;
+  return m_currentHour >= m_stats.getPlayerStatsModel().wakeup_hour &&
+         m_currentHour < m_stats.getPlayerStatsModel().bedtime_hour;
 }
 
 void Game::updateStats(const StatModel &delta) {
-  m_stats->getPlayerStatsModel() = m_stats->getPlayerStatsModel() + delta;
+  StatModel cpy(m_stats.getPlayerStatsModel());
+  m_stats.setPlayerStatsModel(cpy + delta);
   for (const auto &observer : m_observers) {
-    observer->onStatsChanged(m_stats->getPlayerStatsModel());
+    observer->onStatsChanged(m_stats.getPlayerStatsModel());
   }
 }
 

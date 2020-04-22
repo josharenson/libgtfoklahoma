@@ -17,14 +17,20 @@
 
 #pragma once
 
+#include "action_model.hpp"
 #include <chrono>
 #include <cstdint>
 #include <random>
 
 namespace libgtfoklahoma {
-class StatModel;
+struct ActionModel;
+struct StatModel;
 }
 namespace libgtfoklahoma::rules {
+
+static std::random_device rd;
+static std::mt19937 gen(rd());
+static std::uniform_real_distribution<double> randomGenerator(0,1);
 
 #pragma mark - Engine Ticks
 const int32_t kTicksPerGameHour = 120;
@@ -37,14 +43,13 @@ const int32_t kDefaultBedtimeHour = 19;
 const int32_t kDefaultWakeupHour = 6;
 const int32_t kDefaultMoneyRemaining = 2000;
 
+/** Action results */
+bool ActionIsSuccessful(const libgtfoklahoma::ActionModel &action);
+
 #pragma mark - Safety Constants
 const int32_t kDefaultHealth = 100;
 const double kDefaultOddsHealthIssuePerHour = 0.4;
-// Mech issues can only happen when awake
 const double kDefaultOddsMechanicalIssuePerHour = 0.4;
-static std::random_device rd;
-static std::mt19937 gen(rd());
-static std::uniform_real_distribution<double> randomGenerator(0,1);
 bool HealthIssueThisHour(const libgtfoklahoma::StatModel &stats);
 bool MechanicalIssueThisHour(const libgtfoklahoma::StatModel &stats);
 

@@ -57,54 +57,47 @@ TEST_CASE("Issues", "[unit]") {
   Game game("", validActionJson, validEndingJson, validEventJson, issuesJson, validItemJson);
   auto &issues = game.getIssues();
 
-  class Observer : public IEventObserver {
+  class Observer : public TestObserver {
   public:
-    explicit Observer(Game &game) : IEventObserver(game) {}
-    void onGameOver(EndingModel &ending) override {}
-    void onHourChanged(int32_t hour) override {}
-    void onMileChanged(int32_t mile) override {}
-    bool onEvent(EventModel &event) override { return false; }
+    explicit Observer(Game &game) : TestObserver(game) {}
     bool onIssueOccurred(IssueModel &issue) override {
       issue.chooseAction(0);
       return true;
     }
-    void onStatsChanged(StatModel &stats) override {}
-    bool onStoreEntered(ActionModel &action) override { return false; }
   };
-  //game.registerEventObserver();
 
   SECTION("Issues::popRandomIssue") {
     // This isn't random because there is only one of each type
-    auto id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
-    REQUIRE(issues->getIssue(id).description == "HEALTH ISSUE");
-    issues->handleIssue(id, std::make_unique<Observer>(game));
+    auto id = issues.popRandomIssueId(IssueModel::Type::HEALTH);
+    REQUIRE(issues.getIssue(id).description == "HEALTH ISSUE");
+    issues.handleIssue(id, std::make_unique<Observer>(game));
 
     // Issue can't be served again
-    id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
-    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
+    id = issues.popRandomIssueId(IssueModel::Type::HEALTH);
+    REQUIRE(issues.getIssue(id) == Issues::kEmptyIssueModel);
 
     // Dependent actions and inventory work
-    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
-    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
-    game.getActions()->handleAction(0, std::make_unique<Observer>(game));
+    id = issues.popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE(issues.getIssue(id) == Issues::kEmptyIssueModel);
+    game.getActions().handleAction(0, std::make_unique<Observer>(game));
 
     // Should still be empty as inventory requirements aren't met
-    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
-    REQUIRE(issues->getIssue(id) == Issues::kEmptyIssueModel);
+    id = issues.popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE(issues.getIssue(id) == Issues::kEmptyIssueModel);
 
     // NOW we should get the issue as all requirments have been met
     game.addItemToInventory(0);
-    id = issues->popRandomIssueId(IssueModel::Type::MECHANICAL);
-    REQUIRE_FALSE(issues->getIssue(id) == Issues::kEmptyIssueModel);
+    id = issues.popRandomIssueId(IssueModel::Type::MECHANICAL);
+    REQUIRE_FALSE(issues.getIssue(id) == Issues::kEmptyIssueModel);
   }
 
   SECTION("Issues::getIssuesThatHaveAlreadyHappened") {
-    auto haveHappened = issues->getIssuesThatHaveAlreadyHappened();
+    auto haveHappened = issues.getIssuesThatHaveAlreadyHappened();
     REQUIRE(haveHappened.empty());
 
-    auto id = issues->popRandomIssueId(IssueModel::Type::HEALTH);
-    issues->handleIssue(id, std::make_unique<Observer>(game));
-    haveHappened = issues->getIssuesThatHaveAlreadyHappened();
+    auto id = issues.popRandomIssueId(IssueModel::Type::HEALTH);
+    issues.handleIssue(id, std::make_unique<Observer>(game));
+    haveHappened = issues.getIssuesThatHaveAlreadyHappened();
     REQUIRE(haveHappened.count(0));
   }
 }
@@ -152,7 +145,7 @@ TEST_CASE("Issues - Ending Hints") {
   class SuicideObserver : public IEventObserver {
   public:
     explicit SuicideObserver(Game &game) : IEventObserver(game) {}
-    void onGameOver(EndingModel &ending) override {
+    void onGameOver(const EndingModel &ending) override {
       REQUIRE(ending.id == 0);
       TestIssueEndingHints::running = false;
       TestIssueEndingHints::simulation.notify_one();
@@ -165,7 +158,7 @@ TEST_CASE("Issues - Ending Hints") {
       issue.chooseAction(0);
       return true;
     }
-    void onStatsChanged(StatModel &stats) override {}
+    void onStatsChanged(const StatModel &stats) override {}
     bool onStoreEntered(ActionModel &action) override { return false; }
   };
 

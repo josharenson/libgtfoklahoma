@@ -45,7 +45,7 @@ public:
                 const char *itemJson);
 
   // Action management
-  std::unique_ptr<Actions> &getActions();
+  Actions &getActions();
 
   // Distance management
   [[nodiscard]] int32_t getCurrentMile() const;
@@ -53,10 +53,10 @@ public:
 
   // Ending management
   bool gameOver();
-  std::unique_ptr<Endings> &getEndings();
+  Endings &getEndings();
 
   // Event management
-  std::unique_ptr<Events> &getEvents();
+  Events &getEvents();
   [[nodiscard]] std::vector<int32_t> getQueuedEventIds() const;
   [[nodiscard]] int32_t popEndingHintId();
   void pushEndingHintId(int32_t endingId);
@@ -65,21 +65,21 @@ public:
   void addItemToInventory(int32_t id, int32_t quantity=1);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
   [[nodiscard]] bool hasItemInInventory(int32_t id) const;
-  [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory() const;
+  [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory();
 
   // Issue management
-  std::unique_ptr<Issues> &getIssues();
+  Issues &getIssues();
 
   // Item management
-  std::unique_ptr<Items> &getItems();
+  Items &getItems();
 
   // Observer management
-  std::vector<std::reference_wrapper<std::unique_ptr<IEventObserver>>>
+  std::vector<std::shared_ptr<IEventObserver>>
   getObservers();
-  void registerEventObserver(std::unique_ptr<IEventObserver> observer);
+  void registerEventObserver(std::shared_ptr<IEventObserver> observer);
 
   // Stat management
-  std::unique_ptr<Stats> &getStats();
+  Stats &getStats();
   [[nodiscard]] bool playerIsAwake() const;
   void updateStats(const StatModel &delta);
 
@@ -88,17 +88,17 @@ public:
   void setCurrentHour(int32_t hour);
 
 private:
-  std::unique_ptr<Actions> m_actions;
+  Actions m_actions;
   int32_t m_currentHour;
   int32_t m_currentMile;
-  std::unique_ptr<Endings> m_endings;
+  Endings m_endings;
   std::stack<int32_t> m_endingHints;
-  std::unique_ptr<Events> m_events;
+  Events m_events;
   std::map<int32_t, int32_t> m_inventory;
-  std::unique_ptr<Items> m_items;
-  std::unique_ptr<Issues> m_issues;
+  Items m_items;
+  Issues m_issues;
   std::string m_name;
-  std::vector<std::unique_ptr<IEventObserver>> m_observers;
-  std::unique_ptr<Stats> m_stats;
+  std::vector<std::shared_ptr<IEventObserver>> m_observers;
+  Stats m_stats;
 };
 }

@@ -57,7 +57,7 @@ void Engine::mainLoop() {
   bool shouldCheckForMechanicalIssues = false;
 
   uint32_t tick = 0;
-  int32_t ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats()->getPlayerStatsModel());
+  int32_t ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats().getPlayerStatsModel());
 
   while (m_running) {
     std::this_thread::sleep_for(rules::kTickDelayMs);
@@ -66,7 +66,7 @@ void Engine::mainLoop() {
     if (shouldCheckForEvents) {
       for (const auto &observer : m_game.getObservers()) {
         for (const auto &id : m_game.getQueuedEventIds()) {
-          m_game.getEvents()->handleEvent(id, observer);
+          m_game.getEvents().handleEvent(id, observer);
         }
       }
       shouldCheckForEvents = false;
@@ -75,28 +75,28 @@ void Engine::mainLoop() {
     // Handle any mech issues
     if (shouldCheckForMechanicalIssues &&
         m_game.playerIsAwake() &&
-        rules::MechanicalIssueThisHour(m_game.getStats()->getPlayerStatsModel())) {
-      auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::MECHANICAL);
+        rules::MechanicalIssueThisHour(m_game.getStats().getPlayerStatsModel())) {
+      auto id = m_game.getIssues().popRandomIssueId(IssueModel::Type::MECHANICAL);
 
       if (id == -1) {
         spdlog::debug("No more mechanical issues available!");
       } else {
         for (const auto &observer : m_game.getObservers()) {
-          m_game.getIssues()->handleIssue(id, observer);
+          m_game.getIssues().handleIssue(id, observer);
         }
       }
     }
     shouldCheckForMechanicalIssues = false;
 
     // Handle any health issues
-    if (shouldCheckForHealthIssues && rules::HealthIssueThisHour(m_game.getStats()->getPlayerStatsModel())) {
-      auto id = m_game.getIssues()->popRandomIssueId(IssueModel::Type::HEALTH);
+    if (shouldCheckForHealthIssues && rules::HealthIssueThisHour(m_game.getStats().getPlayerStatsModel())) {
+      auto id = m_game.getIssues().popRandomIssueId(IssueModel::Type::HEALTH);
 
       if (id == -1) {
         spdlog::debug("No more health issues available!");
       } else {
         for (const auto &observer : m_game.getObservers()) {
-          m_game.getIssues()->handleIssue(id, observer);
+          m_game.getIssues().handleIssue(id, observer);
         }
       }
     }
@@ -106,26 +106,26 @@ void Engine::mainLoop() {
     if (!(tick % rules::kTicksPerGameHour)) {
       auto new_hour = getNextHour();
       for (const auto &observer : m_game.getObservers()) {
-        observer.get()->onHourChanged(new_hour);
+        observer->onHourChanged(new_hour);
       }
       shouldCheckForHealthIssues = true;
       shouldCheckForMechanicalIssues = true;
     }
 
     if (!ticksUntilNextMile) {
-      ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats()->getPlayerStatsModel());
+      ticksUntilNextMile = rules::TicksUntilNextMile(m_game.getStats().getPlayerStatsModel());
       auto new_mile = m_game.getCurrentMile() + 1;
       for (const auto &observer : m_game.getObservers()) {
-        observer.get()->onMileChanged(new_mile);
+        observer->onMileChanged(new_mile);
       }
       shouldCheckForEvents = true;
     }
 
     if (m_game.gameOver()) {
       // FIXME: ensure ending is poppable and applicable
-      auto ending = m_game.getEndings()->getEnding(m_game.popEndingHintId());
+      auto ending = m_game.getEndings().getEnding(m_game.popEndingHintId());
       for (const auto &observer : m_game.getObservers()) {
-        observer.get()->onGameOver(ending);
+        observer->onGameOver(ending);
       }
       break;
     }
@@ -136,10 +136,10 @@ void Engine::mainLoop() {
 }
 
 void Engine::handleGameOver(int32_t endingId) {
-  auto ending = m_game.getEndings()->getEnding(endingId);
+  auto ending = m_game.getEndings().getEnding(endingId);
   ending.score = 100000;
   for (const auto &observer : m_game.getObservers()) {
-    observer.get()->onGameOver(ending);
+    observer->onGameOver(ending);
   }
   stop();
 }

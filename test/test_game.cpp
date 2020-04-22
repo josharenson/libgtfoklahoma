@@ -59,7 +59,7 @@ TEST_CASE("Game", "[unit]") {
   }
 
   SECTION("Game::getStats") {
-    auto stats = game.getStats()->getPlayerStatsModel();
+    auto stats = game.getStats().getPlayerStatsModel();
     REQUIRE(stats.bedtime_hour == rules::kDefaultBedtimeHour);
     REQUIRE(stats.health == rules::kDefaultHealth);
     REQUIRE(stats.kit_weight == 0);
@@ -73,7 +73,7 @@ TEST_CASE("Game", "[unit]") {
 
   SECTION("Game::updateStats") {
     StatModel deltaModel;
-    const auto &initialStats = game.getStats()->getPlayerStatsModel();
+    const auto &initialStats = game.getStats().getPlayerStatsModel();
 
     // I don't want to define a copy C'tor just for this...
     StatModel initialModel;
@@ -103,7 +103,7 @@ TEST_CASE("Game", "[unit]") {
     deltaModel.wakeup_hour = 1;
 
     game.updateStats(deltaModel);
-    auto &updatedModel = game.getStats()->getPlayerStatsModel();
+    auto &updatedModel = game.getStats().getPlayerStatsModel();
 
     REQUIRE(updatedModel.bedtime_hour == initialModel.bedtime_hour + 1);
     REQUIRE(updatedModel.health == initialModel.health + 1);
@@ -116,12 +116,6 @@ TEST_CASE("Game", "[unit]") {
   }
 }
 
-namespace TestGamEndings {
-std::mutex mutex;
-bool running = true;
-std::condition_variable simulation;
-const std::chrono::milliseconds timeout(1000);
-}
 TEST_CASE("Game - EndingStack") {
   SECTION("Events make correct stack") {
     const char *eventJson = R"(
@@ -137,42 +131,32 @@ TEST_CASE("Game - EndingStack") {
     ]
   )";
 
-    class SuicideObserver : public IEventObserver {
+    class SuicideObserver : public TestObserver {
     public:
-      explicit SuicideObserver(Game &game) : IEventObserver(game) {}
-      void onGameOver(EndingModel &ending) override {
+      explicit SuicideObserver(EngineStopper &stopper, Game &game) : stopper(stopper), TestObserver (game) {}
+      void onGameOver(const EndingModel &ending) override {
         REQUIRE(ending.id == 0);
         // There should be none left, and -1 is invalid
         REQUIRE(m_game.popEndingHintId() == -1);
-        TestGamEndings::running = false;
-        TestGamEndings::simulation.notify_one();
+        stopper.stopEngine();
       }
-      void onHourChanged(int32_t hour) override {}
-      void onMileChanged(int32_t mile) override {}
       bool onEvent(EventModel &event) override {
         event.chooseAction(0);
         return true;
       }
-      bool onIssueOccurred(IssueModel &issue) override { return false; }
-      void onStatsChanged(StatModel &stats) override {}
-      bool onStoreEntered(ActionModel &action) override { return false; }
+    private:
+      EngineStopper &stopper;
     };
-    Game game("", validActionJson, validEndingJson, eventJson, validIssueJson, validItemJson);
 
-    auto observer = std::make_unique<SuicideObserver>(game);
+    Game game("", validActionJson, validEndingJson, eventJson, validIssueJson, validItemJson);
+    EngineStopper stopper;
+
+    auto observer = std::make_unique<SuicideObserver>(stopper, game);
     game.registerEventObserver(std::move(observer));
 
     Engine engine(game);
     engine.start();
-
-    std::unique_lock<std::mutex> lock(TestGamEndings::mutex);
-    if (!TestGamEndings::simulation.wait_until(
-        lock,
-        std::chrono::system_clock::now() + TestGamEndings::timeout,
-        []() { return !TestGamEndings::running; })) {
-      FAIL("Timed out while waiting for the test to simulate death. Profound.");
-    }
-
+    stopper.waitForEngineToStopOrFail();
   }
 }
 

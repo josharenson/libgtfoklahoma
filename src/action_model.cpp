@@ -24,7 +24,13 @@
 
 using namespace libgtfoklahoma;
 
-ActionModel::ActionModel(Game &game) : m_game(game) {}
+ActionModel::ActionModel(Game &game)
+: m_successful(false)
+, m_game(game) {}
+
+bool ActionModel::failed() const {
+  return !m_successful;
+}
 
 void ActionModel::completePurchase() { m_purchaseComplete.set_value(); }
 
@@ -34,8 +40,8 @@ bool ActionModel::itemIsInStock(int32_t itemId) const {
 }
 
 bool ActionModel::purchaseItem(int32_t id_to_buy) {
-  auto &item = m_game.getItems()->getItem(id_to_buy);
-  auto &stats = m_game.getStats()->getPlayerStatsModel();
+  auto &item = m_game.getItems().getItem(id_to_buy);
+  auto &stats = m_game.getStats().getPlayerStatsModel();
   if (item.cost > stats.money_remaining) {
     spdlog::debug("Your broke ass can't afford this item!");
     return false;
@@ -47,10 +53,11 @@ bool ActionModel::purchaseItem(int32_t id_to_buy) {
 std::future<void> ActionModel::purchaseComplete() {
   return m_purchaseComplete.get_future();
 }
+
 bool ActionModel::operator==(const ActionModel &rhs) const {
   return this->id == rhs.id &&
          this->display_name == rhs.display_name &&
          this->item_ids == rhs.item_ids &&
-         this->stat_delta == rhs.stat_delta &&
+         this->stat_delta_regardless == rhs.stat_delta_regardless &&
          this->type == rhs.type;
 }

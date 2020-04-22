@@ -69,7 +69,7 @@ Items::Items(const char *itemsJson) {
 
 ItemModel &Items::getItem(int32_t id) {
   if (m_items.count(id)) {
-    return m_items[id];
+      return m_items[id];
   }
 
   spdlog::warn("Requested item id {} that does not exist.", id);

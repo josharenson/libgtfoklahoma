@@ -117,7 +117,7 @@ IssueModel &Issues::getIssue(int32_t id) {
   return kEmptyIssueModel;
 }
 
-void Issues::handleIssue(int32_t issueId, const std::unique_ptr<IEventObserver> &observer) {
+void Issues::handleIssue(int32_t issueId, const std::shared_ptr<IEventObserver> &observer) {
   IssueModel &issue = getIssue(issueId);
   bool shouldHandle = observer && observer->onIssueOccurred(issue);
   if (!shouldHandle) { return; }
@@ -129,7 +129,7 @@ void Issues::handleIssue(int32_t issueId, const std::unique_ptr<IEventObserver> 
   }
 
   auto actionId = issue.chosenAction().get();
-  m_game.getActions()->handleAction(actionId, observer);
+  m_game.getActions().handleAction(actionId, observer);
 
   // A valid issue exists. Mark it as having happened and apply the stat delta
   m_issuesThatHaveAlreadyHappened.insert(issueId);
@@ -167,7 +167,7 @@ bool Issues::canServeIssue(int32_t id) const {
   if (!issue.dependent_actions.empty()) {
     auto &actions = m_game.getActions();
     for (const auto &action_id : issue.dependent_actions) {
-      if (!actions->actionHasHappened(action_id)) { return false; }
+      if (!actions.actionHasHappened(action_id)) { return false; }
     }
   }
 

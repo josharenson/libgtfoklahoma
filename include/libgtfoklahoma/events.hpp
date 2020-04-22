@@ -34,9 +34,9 @@ public:
   explicit Events(Game &game, const char *eventJson=kEventJson);
 
   [[nodiscard]] EventModel &getEvent(int32_t id);
-  void handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer);
+  void handleEvent(int32_t id, const std::shared_ptr<IEventObserver> &observer);
 
-  std::vector<int32_t> eventsAtMile(int32_t mile);
+  [[nodiscard]] std::vector<int32_t> eventsAtMile(int32_t mile) const;
   [[nodiscard]] bool hasMoreEvents(int32_t mile) const;
 
 public:

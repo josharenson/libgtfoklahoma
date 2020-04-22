@@ -19,10 +19,15 @@
 
 #include <cmath>
 
-#include <libgtfoklahoma/stats.hpp>
+#include <libgtfoklahoma/action_model.hpp>
+#include <libgtfoklahoma/stat_model.hpp>
 
 using namespace libgtfoklahoma;
 using namespace libgtfoklahoma::rules;
+
+bool libgtfoklahoma::rules::ActionIsSuccessful(const libgtfoklahoma::ActionModel &action) {
+  return randomGenerator(gen) <= action.success_chance;
+}
 
 bool libgtfoklahoma::rules::HealthIssueThisHour(const libgtfoklahoma::StatModel &stats) {
   return randomGenerator(gen) <= stats.odds_health_issue;

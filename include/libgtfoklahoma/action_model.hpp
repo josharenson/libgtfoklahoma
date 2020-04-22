@@ -21,6 +21,7 @@
 #include <future>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <libgtfoklahoma/stat_model.hpp>
@@ -40,7 +41,19 @@ struct ActionModel {
   std::string display_name;
 
   // If action is STAT_CHANGE type
-  StatModel stat_delta;
+  float success_chance{0};
+  std::string message_failure;
+  std::string message_success;
+  StatModel stat_delta_regardless;
+  StatModel stat_delta_on_success;
+  StatModel stat_delta_on_failure;
+
+  // The idea here is the client gets the result before calling `chooseAction`
+  // The engine will automatically apply stat changes but its up to the client
+  // to inform the player of the result and the failure/success message
+  // I guess clients could use this to cheat, but this is MY game and I'll do what I want.
+  bool can_fail{false};
+  [[nodiscard]] bool failed() const;
 
   // If action is STORE type
   std::vector<int32_t> item_ids;
@@ -49,6 +62,7 @@ struct ActionModel {
   [[nodiscard]] bool purchaseItem(int32_t id_to_buy);
   std::future<void> purchaseComplete();
 
+  // Helpers for erebody
   uint32_t type{0};
   [[nodiscard]] bool isNoneType() const { return type & ActionType::NONE; }
   [[nodiscard]] bool isStatChangeType() const { return type & ActionType::STAT_CHANGE; }
@@ -57,6 +71,9 @@ struct ActionModel {
   bool operator==(const ActionModel &rhs) const;
 
 private:
+  friend class Actions;
+  bool m_successful;
+
   Game &m_game;
   std::promise<void> m_purchaseComplete;
 };

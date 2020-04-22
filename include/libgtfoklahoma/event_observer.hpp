@@ -43,7 +43,7 @@ public:
   /**
    * @param ending An EndingModel describing how the game ended
    */
-  virtual void onGameOver(EndingModel &ending) = 0;
+  virtual void onGameOver(const EndingModel &ending) = 0;
 
 
   /**
@@ -72,7 +72,7 @@ public:
   /**
    * @param stats - A reference to the updated stat model
    */
-  virtual void onStatsChanged(StatModel &stats) = 0;
+  virtual void onStatsChanged(const StatModel &stats) = 0;
 
   /**
    * @param action - A referene to the action that triggered entering the store

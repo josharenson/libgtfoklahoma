@@ -30,7 +30,11 @@ Stats::Stats(Game &game, StatModel playerStats)
 : m_game(game)
 , m_playerStats(playerStats) {}
 
-StatModel &Stats::getPlayerStatsModel() { return m_playerStats; }
+const StatModel &Stats::getPlayerStatsModel() const { return m_playerStats; }
+
+void Stats::setPlayerStatsModel(StatModel model) {
+    m_playerStats = std::move(model);
+}
 
 StatModel Stats::FromJson(const rapidjson::GenericArray<true, rapidjson::Value> &statChangesArray) {
   std::vector<StatNameDeltaPair> result;

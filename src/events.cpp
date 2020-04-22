@@ -84,7 +84,7 @@ EventModel &Events::getEvent(int32_t id) {
   return kEmptyEventModel;
 }
 
-void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
+void Events::handleEvent(int32_t id, const std::shared_ptr<IEventObserver> &observer) {
   auto &event = getEvent(id);
   bool shouldHandle = observer && observer->onEvent(event);
   if (!shouldHandle) { return; }
@@ -96,10 +96,10 @@ void Events::handleEvent(int32_t id, const std::unique_ptr<IEventObserver> &obse
 
   auto actionId = event.chosenAction().get();
   auto &actions = m_game.getActions();
-  actions->handleAction(actionId, observer);
+  actions.handleAction(actionId, observer);
 }
 
-std::vector<int32_t> Events::eventsAtMile(int32_t mile) {
+std::vector<int32_t> Events::eventsAtMile(int32_t mile) const {
   if (m_eventsByMile.count(mile))
     return m_eventsByMile.at(mile);
   else

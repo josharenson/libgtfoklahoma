@@ -34,7 +34,7 @@ class Issues {
 public:
   explicit Issues(Game &game, const char *issuesJson=kIssuesJson);
   IssueModel &getIssue(int32_t id);
-  void handleIssue(int32_t id, const std::unique_ptr<IEventObserver> &observer);
+  void handleIssue(int32_t id, const std::shared_ptr<IEventObserver> &observer);
   int32_t popRandomIssueId(IssueModel::Type type);
 
   [[nodiscard]] std::unordered_set<int32_t> getIssuesThatHaveAlreadyHappened() const;

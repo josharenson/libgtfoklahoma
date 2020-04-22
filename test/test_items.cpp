@@ -44,10 +44,10 @@ TEST_CASE("Items", "[unit]") {
   auto &items = game.getItems();
 
   SECTION("Items::getItem") {
-    auto item = items->getItem(0);
+    auto item = items.getItem(0);
     REQUIRE_FALSE(item == Items::kEmptyItemModel);
 
-    item = items->getItem(-1);
+    item = items.getItem(-1);
     REQUIRE(item == Items::kEmptyItemModel);
   }
 

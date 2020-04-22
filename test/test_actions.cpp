@@ -40,13 +40,13 @@ TEST_CASE("Actions", "[unit]") {
     {
       "id": 0,
       "display_name": "display_name_0",
-      "stat_changes": [{}],
+      "stat_changes_regardless": [{}],
       "type": ["STAT_CHANGE"]
     },
     {
       "display_name": "display_name_1",
       "id": 10,
-      "stat_changes": [
+      "stat_changes_regardless": [
         {"bedtime_hour": 5},
         {"kit_weight": 5},
         {"max_mph": 5},
@@ -61,7 +61,7 @@ TEST_CASE("Actions", "[unit]") {
       "display_name": "display_name_1",
       "id": 2,
       "items": [0, 1],
-      "stat_changes": [{"kit_weight": 5}],
+      "stat_changes_regardless": [{"kit_weight": 5}],
       "type": ["STAT_CHANGE", "STORE"]
     }
   ]
@@ -72,32 +72,32 @@ TEST_CASE("Actions", "[unit]") {
 
   SECTION("Action::getAction") {
     {
-      auto &action = actions->getAction(0);
-      REQUIRE_FALSE(action == actions->kEmptyActionModel);
+      auto &action = actions.getAction(0);
+      REQUIRE_FALSE(action == actions.kEmptyActionModel);
     }
 
     {
-      auto &action = actions->getAction(-1);
-      REQUIRE(action == actions->kEmptyActionModel);
+      auto &action = actions.getAction(-1);
+      REQUIRE(action == actions.kEmptyActionModel);
     }
   }
 
   SECTION("Action::actionHasHappened") {
-      REQUIRE_FALSE(actions->actionHasHappened(0));
-      actions->handleAction(0, nullptr);
-      REQUIRE(actions->actionHasHappened(0));
+      REQUIRE_FALSE(actions.actionHasHappened(0));
+      actions.handleAction(0, nullptr);
+      REQUIRE(actions.actionHasHappened(0));
   }
 
   SECTION("Action::setActionsThatHaveAlreadyHappened") {
-      REQUIRE_FALSE(actions->actionHasHappened(0));
-      actions->setActionsThatHaveAlreadyHappened({0});
-      REQUIRE(actions->actionHasHappened(0));
+      REQUIRE_FALSE(actions.actionHasHappened(0));
+      actions.setActionsThatHaveAlreadyHappened({0});
+      REQUIRE(actions.actionHasHappened(0));
   }
 
   SECTION("ActionModel::purchaseItem") {
-      REQUIRE(actions->getAction(0).purchaseItem(0));
-      actions->getAction(0).completePurchase();
-      actions->getAction(0).purchaseComplete().get();
+      REQUIRE(actions.getAction(0).purchaseItem(0));
+      actions.getAction(0).completePurchase();
+      actions.getAction(0).purchaseComplete().get();
       auto purchasedItems = game.getInventory();
 
       REQUIRE(purchasedItems.size());
@@ -105,7 +105,7 @@ TEST_CASE("Actions", "[unit]") {
   }
 
   SECTION("ActionModel::is*type") {
-    ActionModel &model = actions->getAction(2);
+    ActionModel &model = actions.getAction(2);
 
     REQUIRE_FALSE(model.isNoneType());
     REQUIRE(model.isStatChangeType());
@@ -114,7 +114,7 @@ TEST_CASE("Actions", "[unit]") {
     REQUIRE(model.item_ids[0] == 0);
     REQUIRE(model.item_ids[1] == 1);
 
-    REQUIRE(model.stat_delta.kit_weight == 5);
+    REQUIRE(model.stat_delta_regardless.kit_weight == 5);
   }
 }
 
@@ -145,7 +145,7 @@ TEST_CASE("Actions - Ending hints") {
       "ending_id_hints": [0],
       "id": 0,
       "items": [0],
-      "stat_changes": [
+      "stat_changes_regardless": [
         {"health": -10000}
       ],
       "type": ["STAT_CHANGE"]
@@ -155,26 +155,21 @@ TEST_CASE("Actions - Ending hints") {
 
   Game game("", actionsJson, validEndingJson, eventJson, validIssueJson, validItemJson);
 
-  // We can't mock this because ownership is transfered and then blah blah
+  // We can't mock this because ownership is transferred and then blah blah
   // deleting an object that was already deleted something custom deleter didn't work
   // without crazy templates everywhere so screw it.
-  class NonsenseObserver : public IEventObserver {
+  class NonsenseObserver : public TestObserver {
   public:
-    explicit NonsenseObserver(Game &game) : IEventObserver(game) {}
-    void onGameOver(EndingModel &ending) override {
+    explicit NonsenseObserver(Game &game) : TestObserver(game) {}
+    void onGameOver(const EndingModel &ending) override {
       REQUIRE(ending.id == 0);
       TestActionEndingHints::running = false;
       TestActionEndingHints::simulation.notify_one();
     }
-    void onHourChanged(int32_t hour) override {}
-    void onMileChanged(int32_t mile) override {}
     bool onEvent(EventModel &event) override {
       event.chooseAction(0);
       return true;
     }
-    bool onIssueOccurred(IssueModel &issue) override { return false; }
-    void onStatsChanged(StatModel &stats) override {}
-    bool onStoreEntered(ActionModel &action) override { return false; }
   };
 
   auto observer = std::make_unique<NonsenseObserver>(game);
@@ -220,7 +215,7 @@ TEST_CASE("Actions - Store Type Actions") {
 
   Mock<IEventObserver> mockObserver;
   Fake(Dtor(mockObserver));
-  auto mockObserverPtr = std::unique_ptr<IEventObserver>(&mockObserver.get());
+  auto mockObserverPtr = std::shared_ptr<IEventObserver>(&mockObserver.get());
 
   Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, itemsJson);
   //Engine engine(game);
@@ -230,8 +225,8 @@ TEST_CASE("Actions - Store Type Actions") {
     StatModel stats;
     stats.money_remaining = 1; // Make sure there is enough
     game.updateStats(stats);
-    REQUIRE(game.getStats()->getPlayerStatsModel().money_remaining >= 1);
-    auto initial_money = game.getStats()->getPlayerStatsModel().money_remaining;
+    REQUIRE(game.getStats().getPlayerStatsModel().money_remaining >= 1);
+    auto initial_money = game.getStats().getPlayerStatsModel().money_remaining;
 
     // Tell the mock to purchase the item
     When(Method(mockObserver, onStoreEntered)).AlwaysDo([](ActionModel &action){
@@ -240,11 +235,31 @@ TEST_CASE("Actions - Store Type Actions") {
       return true;
     });
 
-    game.getActions()->handleAction(0, mockObserverPtr);
+    game.getActions().handleAction(0, mockObserverPtr);
     auto inventory = game.getInventory();
     REQUIRE(inventory.size() == 1);
     REQUIRE(inventory[0].get().id == 0);
-    auto current_money = game.getStats()->getPlayerStatsModel().money_remaining;
+    auto current_money = game.getStats().getPlayerStatsModel().money_remaining;
     REQUIRE(current_money == initial_money - 1);
+  }
+}
+
+TEST_CASE("Actions - Success/Failure") {
+ SECTION("Failure case") {
+    const char *actionsJson = R"(
+    [
+      {
+        "display_name": "",
+        "id": 0,
+        "items": [0],
+        "success_chance": 0.0,
+        "stat_changes_regardless": [{"max_mph": 1}],
+        "type": ["STAT_CHANGE"]
+      }
+    ]
+    )";
+    Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+    auto &action = game.getActions().getAction(0);
+    REQUIRE(action.failed());
   }
 }

@@ -37,7 +37,8 @@ public:
    * Stats are weird as only one stat object exists per player unlike the rest of the game items
    */
    explicit Stats(Game &game, StatModel playeSstats);
-   StatModel &getPlayerStatsModel();
+   [[nodiscard]] const StatModel &getPlayerStatsModel() const;
+   void setPlayerStatsModel(StatModel model);
 
   /**
    *

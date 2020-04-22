@@ -54,18 +54,18 @@ TEST_CASE("Events", "[unit]") {
 
   SECTION("Events::getEvent") {
     {
-      auto &event = events->getEvent(0);
+      auto &event = events.getEvent(0);
       REQUIRE_FALSE(event == Events::kEmptyEventModel);
     }
 
     {
-      auto &event = events->getEvent(-1);
+      auto &event = events.getEvent(-1);
       REQUIRE(event == Events::kEmptyEventModel);
     }
   }
 
   SECTION("Events::eventsAtMile") {
-    auto eventsAt0 = events->eventsAtMile(0);
+    auto eventsAt0 = events.eventsAtMile(0);
 
     REQUIRE(eventsAt0.size() == 2);
     REQUIRE(std::find(eventsAt0.begin(), eventsAt0.end(), 0) != eventsAt0.end());
@@ -73,70 +73,121 @@ TEST_CASE("Events", "[unit]") {
   }
 
   SECTION("Events::hasMoreEvents") {
-    REQUIRE_FALSE(events->hasMoreEvents(1));
+    REQUIRE_FALSE(events.hasMoreEvents(1));
   }
 
   SECTION("EventModel::chooseAction") {
-    auto &event0 = events->getEvent(events->eventsAtMile(0)[0]);
+    auto &event0 = events.getEvent(events.eventsAtMile(0)[0]);
     event0.chooseAction(0);
     REQUIRE(event0.chosenAction().get() == 0);
   }
 }
 
-namespace TestEventEndingHints {
-std::mutex mutex;
-bool running = true;
-std::condition_variable simulation;
-const std::chrono::milliseconds timeout(1000);
-}
+
 TEST_CASE("Events - Ending Hints") {
 
   // The game should end happily as we reach the final destination safely
-  const char *eventJson = R"(
-  [
-    {
-      "id": 0,
-      "actions": [0],
-      "ending_id_hints": [0],
-      "description": "",
-      "display_name": "",
-      "mile": 0
-    }
-  ]
-  )";
+  Game game("", validActionJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+  EngineStopper stopper;
 
-  Game game("", validActionJson, validEndingJson, eventJson, validIssueJson, validItemJson);
-
-  class SuicideObserver : public IEventObserver {
+  class SuicideObserver : public TestObserver {
   public:
-    explicit SuicideObserver(Game &game) : IEventObserver(game) {}
-    void onGameOver(EndingModel &ending) override {
+    explicit SuicideObserver(EngineStopper &stopper, Game &game) : stopper(stopper), TestObserver(game){}
+    void onGameOver(const EndingModel &ending) override {
       REQUIRE(ending.id == 0);
-      TestEventEndingHints::running = false;
-      TestEventEndingHints::simulation.notify_one();
+      stopper.stopEngine();
     }
-    void onHourChanged(int32_t hour) override {}
-    void onMileChanged(int32_t mile) override {}
     bool onEvent(EventModel &event) override {
       event.chooseAction(0);
       return true;
     }
-    bool onIssueOccurred(IssueModel &issue) override { return false; }
-    void onStatsChanged(StatModel &stats) override {}
-    bool onStoreEntered(ActionModel &action) override { return false; }
+  private:
+    EngineStopper &stopper;
   };
 
-  auto observer = std::make_unique<SuicideObserver>(game);
+  auto observer = std::make_unique<SuicideObserver>(stopper, game);
   game.registerEventObserver(std::move(observer));
 
   Engine engine(game);
   engine.start();
+  stopper.waitForEngineToStopOrFail();
+}
 
-  std::unique_lock<std::mutex> lock(TestEventEndingHints::mutex);
-  if (!TestEventEndingHints::simulation.wait_until(
-      lock,
-      std::chrono::system_clock::now() + TestEventEndingHints::timeout,
-      []() { return !TestEventEndingHints::running; })) {
-    FAIL("Timed out while waiting for the test to simulate death. Profound.");
+TEST_CASE("Events - Chosen failable actions apply stats correctly") {
+
+  class Observer : public TestObserver {
+  public:
+    explicit Observer(bool expect_failure, EngineStopper &stopper, Game &game)
+    : expect_failure(expect_failure)
+    , stopper(stopper)
+    , TestObserver(game) {}
+
+    void onGameOver(const EndingModel &) override { stopper.stopEngine(); }
+    bool onEvent(EventModel &event) override {
+      if (expect_failure) {
+        REQUIRE(m_game.getActions().getAction(0).message_failure ==
+                "message_failure");
+      } else {
+        REQUIRE(m_game.getActions().getAction(0).message_success ==
+                "message_success");
+      }
+      event.chooseAction(0);
+      return true;
+    }
+  private:
+    bool expect_failure;
+    EngineStopper &stopper;
+  };
+
+  SECTION("Failed action is correct") {
+    const char *actionJson = R"(
+    [
+      {
+        "id": 0,
+        "display_name": "",
+        "message_failure": "message_failure",
+        "success_chance":0.0,
+        "stat_changes_on_failure": [{"health": -1000}],
+        "type": ["STAT_CHANGE"]
+
+      }
+    ]
+    )";
+
+    EngineStopper stopper;
+    Game game("", actionJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+    game.registerEventObserver(std::make_shared<Observer>(true, stopper, game));
+    Engine engine(game);
+    auto initial_health = game.getStats().getPlayerStatsModel().health;
+    auto expected_health = initial_health - 1000;
+    engine.start();
+    stopper.waitForEngineToStopOrFail();
+    REQUIRE(game.getStats().getPlayerStatsModel().health == expected_health);
+  }
+
+  SECTION("Success action is correct") {
+    const char *actionJson = R"(
+    [
+      {
+        "id": 0,
+        "display_name": "",
+        "message_success": "message_success",
+        "success_chance": 1.0,
+        "stat_changes_on_success": [{"health": -1000}],
+        "type": ["STAT_CHANGE"]
+
+      }
+    ]
+    )";
+
+    EngineStopper stopper;
+    Game game("", actionJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+    game.registerEventObserver(std::make_shared<Observer>(false, stopper, game));
+    Engine engine(game);
+    auto initial_health = game.getStats().getPlayerStatsModel().health;
+    auto expected_health = initial_health - 1000;
+    engine.start();
+    stopper.waitForEngineToStopOrFail();
+    REQUIRE(game.getStats().getPlayerStatsModel().health == expected_health);
   }
 }

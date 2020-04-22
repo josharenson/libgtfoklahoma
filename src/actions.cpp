@@ -83,8 +83,29 @@ Actions::Actions(Game &game, const char *actionJson)
         }
       }
 
-      if (model.isStatChangeType() && action.HasMember("stat_changes")){
-        model.stat_delta = Stats::FromJson(action["stat_changes"].GetArray());
+      if (model.isStatChangeType() && action.HasMember("success_chance")) {
+        model.can_fail = true;
+        model.success_chance = action["success_chance"].GetFloat();
+      }
+
+      if (model.isStatChangeType() && action.HasMember("message_failure")) {
+        model.message_failure = action["message_failure"].GetString();
+      }
+
+      if (model.isStatChangeType() && action.HasMember("message_success")) {
+        model.message_success = action["message_success"].GetString();
+      }
+
+      if (model.isStatChangeType() && action.HasMember("stat_changes_on_failure")){
+        model.stat_delta_on_failure = Stats::FromJson(action["stat_changes_on_failure"].GetArray());
+      }
+
+      if (model.isStatChangeType() && action.HasMember("stat_changes_on_success")){
+        model.stat_delta_on_success = Stats::FromJson(action["stat_changes_on_success"].GetArray());
+      }
+
+      if (model.isStatChangeType() && action.HasMember("stat_changes_regardless")){
+        model.stat_delta_regardless = Stats::FromJson(action["stat_changes_regardless"].GetArray());
       }
 
       if (model.isStoreType() && action.HasMember("items")) {
@@ -97,6 +118,12 @@ Actions::Actions(Game &game, const char *actionJson)
       spdlog::error("Parsing error when adding an action");
     }
   }
+
+  // Determine all action outcomes now because free-will isn't real.
+  for (auto &action_id_pair : m_actions) {
+    auto &action = action_id_pair.second;
+      action.m_successful = rules::ActionIsSuccessful(action);
+  }
 }
 
 ActionModel &Actions::getAction(int32_t id) {
@@ -108,7 +135,7 @@ ActionModel &Actions::getAction(int32_t id) {
   return kEmptyActionModel;
 }
 
-void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &observer) {
+void Actions::handleAction(int32_t id, const std::shared_ptr<IEventObserver> &observer) {
   ActionModel &action = getAction(id);
   spdlog::debug("Performing action {}", id);
 
@@ -117,15 +144,26 @@ void Actions::handleAction(int32_t id, const std::unique_ptr<IEventObserver> &ob
     m_game.pushEndingHintId(endingId);
   }
 
+  // Update stats if this action has stat changes associated with it
   if (action.isStatChangeType()) {
-    m_game.updateStats(action.stat_delta);
+    m_game.updateStats(action.stat_delta_regardless);
+    if (action.can_fail && action.failed()) {
+      m_game.updateStats(action.stat_delta_on_failure);
+    } else if (action.can_fail) {
+      m_game.updateStats(action.stat_delta_on_success);
+    }
   }
 
+  // If the action is a store (weird design but it works), block until
+  // the player has left the store
   if (action.isStoreType()) {
     observer->onStoreEntered(action);
     action.purchaseComplete().get();
   }
 
+  // There are entities that are dependent on actions having happened
+  // eg: "You can only explode if someone has previously set us up the bomb"
+  // so track what has happened
   m_actionsThatHaveAlreadyHappened.insert(id);
 }
 

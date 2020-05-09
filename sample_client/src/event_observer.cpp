@@ -30,6 +30,7 @@
 #include <spdlog/spdlog.h>
 
 // Local includes
+#include <sprites.hpp>
 #include <ui.hpp>
 #include <ui_utils.hpp>
 
@@ -40,14 +41,16 @@ EventObserver::EventObserver(Game &game, Ui &ui)
 : m_ui(ui)
 , IEventObserver(game) {}
 
+void EventObserver::onGameOver(const libgtfoklahoma::EndingModel &ending) {}
+
 void EventObserver::onHourChanged(int32_t hour) {
   spdlog::debug("Current hour is {}", hour);
-  m_ui.renderStats(m_game.getStats()->getPlayerStatsModel(), m_game.getCurrentMile(), hour);
+  m_ui.renderStats(m_game.getStats().getPlayerStatsModel(), m_game.getCurrentMile(), hour);
 }
 
 void EventObserver::onMileChanged(int32_t mile) {
   spdlog::debug("Current mile is {}", mile);
-  m_ui.renderStats(m_game.getStats()->getPlayerStatsModel(), mile, m_game.getCurrentHour());
+  m_ui.renderStats(m_game.getStats().getPlayerStatsModel(), mile, m_game.getCurrentHour());
 }
 
 bool EventObserver::onEvent(EventModel &event) {
@@ -55,7 +58,7 @@ bool EventObserver::onEvent(EventModel &event) {
 
   std::vector<std::reference_wrapper<ActionModel>> actions;
   for (const auto &actionId : event.action_ids) {
-    actions.emplace_back(m_game.getActions()->getAction(actionId));
+    actions.emplace_back(m_game.getActions().getAction(actionId));
   }
 
   m_ui.renderEvent(event, actions);
@@ -77,7 +80,7 @@ bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
 
   std::vector<std::reference_wrapper<ActionModel>> actions;
   for (const auto &actionId : issue.actions) {
-    actions.emplace_back(m_game.getActions()->getAction(actionId));
+    actions.emplace_back(m_game.getActions().getAction(actionId));
   }
 
   m_ui.renderIssue(issue, actions);
@@ -94,7 +97,7 @@ bool EventObserver::onIssueOccurred(libgtfoklahoma::IssueModel &issue) {
   return true;
 }
 
-void EventObserver::onStatsChanged(libgtfoklahoma::StatModel &stats) {
+void EventObserver::onStatsChanged(const libgtfoklahoma::StatModel &stats) {
   m_ui.renderStats(stats, m_game.getCurrentMile(), m_game.getCurrentHour());
 }
 
@@ -103,7 +106,7 @@ bool EventObserver::onStoreEntered(ActionModel &action) {
 
   std::vector<std::reference_wrapper<ItemModel>> items;
   for (const auto &itemId : action.item_ids) {
-    items.emplace_back(m_game.getItems()->getItem(itemId));
+    items.emplace_back(m_game.getItems().getItem(itemId));
   }
 
   m_ui.renderStore(action, items);
@@ -130,4 +133,3 @@ bool EventObserver::onStoreEntered(ActionModel &action) {
   action.completePurchase();
   return true;
 }
-

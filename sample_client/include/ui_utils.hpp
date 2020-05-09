@@ -29,6 +29,34 @@ class UIUtils {
 public:
   using BlitBuffer = std::vector<std::string>;
 
+  enum class SpriteAlignment {
+    CENTER_CENTER,
+    TOP_CENTER
+  };
+
+  /**
+   *
+   * @param buffer A BlitBuffer to blit. Each row must be the same length.
+   * @param x Top left X position.
+   * @param y Top left Y position.
+   * @param fg_color Foreground color.
+   * @param bg_color Background color.
+   */
+  static void blitRaw(const BlitBuffer &buffer, int32_t x, int32_t y,
+                      uint16_t fg_color, uint16_t bg_color);
+
+  /**
+   *
+   * @param sprite A reference to the sprite. Each row of a sprite must be the
+   * same length.
+   * @param window A reference to the destination Window
+   * @param spriteAlignment How the sprite should be aligned before any
+   * animation
+   * @param animationDirection How the sprint should be animated, if any
+   */
+  static void blitSprite(const BlitBuffer &sprite, const Window &window,
+                         SpriteAlignment spriteOrigin);
+
   /**
    *
    * @param buffer Buffer ot characters to blit.
@@ -37,6 +65,11 @@ public:
    */
   static void blitWindow(const BlitBuffer &buffer, const Window &window,
                          bool clear = true);
+
+  /**
+   * Just waits until an "Enter" event is received.
+   */
+  static void blockUntilEnter();
 
   /**
    *
@@ -84,9 +117,6 @@ public:
                                char delimiter = ' ');
 
 private:
-  static void blitRaw(const BlitBuffer &buffer, int32_t x, int32_t y,
-                      uint16_t fg_color, uint16_t bg_color);
-
   static std::string elide(const std::string &str, int32_t result_length,
                            const std::string &elideText = "...");
 

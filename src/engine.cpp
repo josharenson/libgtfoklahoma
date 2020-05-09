@@ -53,7 +53,7 @@ void Engine::mainLoop() {
   bool shouldCheckForEvents = true;
 
   // Issues are checked once per hour
-  bool shouldCheckForHealthIssues = true;
+  bool shouldCheckForHealthIssues = false;
   bool shouldCheckForMechanicalIssues = false;
 
   uint32_t tick = 0;

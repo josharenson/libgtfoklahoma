@@ -34,6 +34,7 @@
 // Local includes
 #include <libgtfoklahoma/issue_model.hpp>
 #include <libgtfoklahoma/item_model.hpp>
+#include <sprites.hpp>
 #include <ui_utils.hpp>
 
 using namespace gtfoklahoma;
@@ -49,8 +50,8 @@ Ui::Ui()
   m_termHeight = tb_height();
   m_termWidth = tb_width();
 
-  //m_termHeight = 100;
-  //m_termWidth = 100;
+  //m_termHeight = 300;
+  //m_termWidth = 300;
 
   m_mainWindow.height = (.6 * m_termHeight);
   m_mainWindow.width = (.95 * m_termWidth);
@@ -94,14 +95,36 @@ Ui::Ui()
   m_inputBar.fg_color = TB_WHITE;
   UIUtils::clearWindow(m_inputBar);
 
+  // Render the intro
+  UIUtils::blitSprite(sprites::fullscreenLogo, m_mainWindow,
+                      UIUtils::SpriteAlignment::CENTER_CENTER);
+  UIUtils::blitSprite(sprites::texasState, m_inventoryWindow,
+                      UIUtils::SpriteAlignment::CENTER_CENTER);
+  UIUtils::blitSprite(sprites::oklahomaState, m_statsWindow,
+                      UIUtils::SpriteAlignment::CENTER_CENTER);
+  m_inputBar.startAnimation({"PRESS ENTER TO START"});
+
+  // Chill until the player is ready
+  UIUtils::blockUntilEnter();
 }
 
 Ui::~Ui() { tb_shutdown(); }
 
+void Ui::renderBeginGame(const libgtfoklahoma::StatModel &initialStats,
+                         int32_t initialMile,
+                         int32_t initialHour) {
+  UIUtils::clearWindow(m_mainWindow);
+  renderStats(initialStats, initialMile, initialHour);
+  UIUtils::clearWindow(m_inventoryWindow);
+
+  m_inputBar.stopAnimation();
+  UIUtils::clearWindow(m_inputBar);
+  UIUtils::blitWindow({"| F1 - GTFO (Quit) |"}, m_bottomBar);
+}
+
 void Ui::renderEvent(
     const libgtfoklahoma::EventModel &event,
-    const std::vector<std::reference_wrapper<libgtfoklahoma::ActionModel>>
-        &actions) {
+    const std::vector<std::reference_wrapper<libgtfoklahoma::ActionModel>> &actions) {
 
   std::vector<std::string> actionNames;
   actionNames.reserve(actions.size());

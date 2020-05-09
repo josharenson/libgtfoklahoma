@@ -157,7 +157,9 @@ std::unordered_set<int32_t> Issues::getIssuesThatHaveAlreadyHappened() const {
 }
 
 void Issues::setIssuesThatHaveAlreadyHappened(std::unordered_set<int32_t> ids) {
-  m_issuesThatHaveAlreadyHappened.merge(ids);
+  for (const auto &id : ids) {
+    m_issuesThatHaveAlreadyHappened.insert(id);
+  }
 }
 
 bool Issues::canServeIssue(int32_t id) const {

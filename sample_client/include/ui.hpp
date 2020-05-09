@@ -37,6 +37,9 @@ public:
   Ui();
   ~Ui();
 
+  // Call when the into is over to initialize all the windows
+  void renderBeginGame(const libgtfoklahoma::StatModel &initialStats, int32_t initialMile, int32_t initialHour);
+
   /** Things that happen in the main window **/
   [[nodiscard]] const Window &mainWindow() const;
   void renderEvent(const libgtfoklahoma::EventModel &event,

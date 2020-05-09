@@ -22,9 +22,7 @@
 // System Includes
 #include <chrono>
 #include <csignal>
-#include <cstdint>
 #include <memory>
-#include <thread>
 
 // 3P includes
 #include <spdlog/spdlog.h>
@@ -33,9 +31,12 @@
 // Local includes
 #include <event_observer.hpp>
 #include <ui.hpp>
-#include <window.hpp>
 
-void signalHandler(int sigNum) { exit(sigNum); }
+void signalHandler(int sigNum) {
+  spdlog::info("SIGINT");
+  spdlog::default_logger()->flush();
+  exit(sigNum);
+}
 
 using namespace gtfoklahoma;
 
@@ -46,19 +47,13 @@ int main(int argc, char *argv[]) {
   spdlog::set_default_logger(file_logger);
   spdlog::set_level(spdlog::level::debug);
 
-  // Draws empty UI
+  // Draws intro UI - blocks until player starts game
   Ui ui;
-
-
-  auto bottomBarText = "[F1] - HELP | [F2] - INVENTORY | [F3] - SETTINGS | [F4] - SAVE | [F5] - QUIT";
-  // ui.setTextRaw(ui.bottomBar(), bottomBarText);
-
-  // std::string logo = R"(*____    ______  ____    _____   __       ___             __**************************************/\  _`\ /\__  _\/\  _`\ /\  __`\/\ \     /\_ \           /\ \*************************************\ \ \L\_\/_/\ \/\ \ \L\_\ \ \/\ \ \ \/'\ \//\ \      __  \ \ \___     ___     ___ ___      __******\ \ \L_L  \ \ \ \ \  _\/\ \ \ \ \ \ , <   \ \ \   /'__`\ \ \  _ `\  / __`\ /' __` __`\  /'__`\*****\ \ \/, \ \ \ \ \ \ \/  \ \ \_\ \ \ \\`\  \_\ \_/\ \L\.\_\ \ \ \ \/\ \L\ \/\ \/\ \/\ \/\ \L\.\_****\ \____/  \ \_\ \ \_\   \ \_____\ \_\ \_\/\____\ \__/.\_\\ \_\ \_\ \____/\ \_\ \_\ \_\ \__/.\_\****\/___/    \/_/  \/_/    \/_____/\/_/\/_/\/____/\/__/\/_/ \/_/\/_/\/___/  \/_/\/_/\/_/\/__/\/_/)";
-
 
   libgtfoklahoma::Game game("");
   auto eventObserver = std::make_unique<gtfoklahoma::EventObserver>(game, ui);
   game.registerEventObserver(std::move(eventObserver));
+  ui.renderBeginGame(game.getStats().getPlayerStatsModel(), game.getCurrentMile(), game.getCurrentHour());
 
   auto engine = std::make_unique<libgtfoklahoma::Engine>(game);
   engine->start();
@@ -66,6 +61,7 @@ int main(int argc, char *argv[]) {
   // UI thread?
   auto delay = std::chrono::milliseconds(250);
   for (;;) {
+    spdlog::default_logger()->flush();
     std::this_thread::sleep_for(delay);
   }
 }

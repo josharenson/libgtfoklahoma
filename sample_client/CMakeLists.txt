@@ -21,6 +21,7 @@ if (BUILD_SAMPLE_CLIENT)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui_utils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/window_animation.cpp
         main.cpp
     )
     ExternalProject_Get_Property(Termbox INSTALL_DIR)

@@ -22,6 +22,7 @@
 namespace libgtfoklahoma {
 class Game;
 struct ActionModel;
+struct EndingModel;
 struct EventModel;
 struct IssueModel;
 struct ItemModel;
@@ -36,11 +37,12 @@ public:
   explicit EventObserver(libgtfoklahoma::Game &game, Ui &ui);
   ~EventObserver() override = default;
 
+  void onGameOver(const libgtfoklahoma::EndingModel &ending) override;
   void onHourChanged(int32_t hour) override;
   void onMileChanged(int32_t mile) override;
   bool onEvent(libgtfoklahoma::EventModel &event) override;
   bool onIssueOccurred(libgtfoklahoma::IssueModel &issue) override;
-  void onStatsChanged(libgtfoklahoma::StatModel &stats) override;
+  void onStatsChanged(const libgtfoklahoma::StatModel &stats) override;
   bool onStoreEntered(libgtfoklahoma::ActionModel &action) override;
 
 private:

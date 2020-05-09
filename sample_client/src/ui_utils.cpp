@@ -28,9 +28,66 @@
 
 using namespace gtfoklahoma;
 
+void UIUtils::blitRaw(const BlitBuffer &buffer, int32_t x, int32_t y,
+                      uint16_t fg_color, uint16_t bg_color) {
+  /*BlitBuffer  jam = {
+      {"-------- __@ "},
+      {"----- _`\\<,_ "},
+      {"---- (*)/ (*)"}
+  };*/
+  auto num_cols = buffer[0].length();
+  auto num_rows = buffer.size();
+  int32_t colIdx = 0;
+  int32_t rowIdx = 0;
+  for (int row = y; row < (y + num_rows); row++) {
+    for (int col = x; col < (x + num_cols); col++) {
+      tb_change_cell(col, row, buffer[rowIdx][colIdx], fg_color, bg_color);
+      colIdx++;
+    }
+    colIdx = 0;
+    rowIdx++;
+    num_cols = buffer[rowIdx].length();
+  }
+  tb_present();
+}
+
+void UIUtils::blitSprite(const UIUtils::BlitBuffer &sprite,
+                         const Window &window,
+                         UIUtils::SpriteAlignment spriteOrigin) {
+  int32_t x = window.x();
+  int32_t y = window.y();
+  switch(spriteOrigin) {
+  case SpriteAlignment::CENTER_CENTER: {
+    x += (window.width - sprite[0].length()) / 2;
+    y += (window.height - sprite.size()) / 2;
+    break;
+  }
+  case SpriteAlignment::TOP_CENTER: {
+    x += (window.width - sprite[0].length()) / 2;
+    y = window.y();
+    break;
+  }
+  }
+  clearWindow(window);
+  blitRaw(sprite, x, y, window.fg_color, window.bg_color);
+}
+
 void UIUtils::blitWindow(const BlitBuffer &buffer, const Window &window, bool clear) {
   if (clear) { UIUtils::clearWindow(window);}
   blitRaw(buffer, window.x(), window.y(), window.fg_color, window.bg_color);
+}
+
+void UIUtils::blockUntilEnter() {
+  struct tb_event event{};
+  while (tb_poll_event(&event)) {
+    // Ignore non key events
+    if (event.type != TB_EVENT_KEY) {
+      continue;
+    }
+    if (event.key == TB_KEY_ENTER) {
+      break;
+    }
+  }
 }
 
 void UIUtils::clearWindow(const Window &window) {
@@ -68,14 +125,14 @@ int32_t UIUtils::getInputInt(const Window &window, const std::string &prompt,
     return result;
   };
 
-  auto echo = [&charsInputSoFar, prompt, window](uint32_t ch){
+  auto echo = [&charsInputSoFar, prompt, &window](uint32_t ch){
     auto x = window.x() + prompt.length() + charsInputSoFar;
     tb_change_cell(x, window.y(), ch, window.fg_color, window.bg_color);
     tb_present();
     charsInputSoFar++;
   };
 
-  auto retry = [&accumulator, &charsInputSoFar, prompt, retry_prompt, window](){
+  auto retry = [&accumulator, &charsInputSoFar, prompt, retry_prompt, &window](){
     spdlog::debug("Entering retry workflow");
     std::chrono::milliseconds delay(2000);
     blitWindow({retry_prompt}, window);
@@ -195,25 +252,4 @@ UIUtils::BlitBuffer UIUtils::wrapString(const std::string &str,
   return result;
 }
 
-void UIUtils::blitRaw(const BlitBuffer &buffer, int32_t x, int32_t y,
-                 uint16_t fg_color, uint16_t bg_color) {
-  /*BlitBuffer  jam = {
-      {"-------- __@ "},
-      {"----- _`\\<,_ "},
-      {"---- (*)/ (*)"}
-  };*/
-  auto num_cols = buffer[0].length();
-  auto num_rows = buffer.size();
-  int32_t colIdx = 0;
-  int32_t rowIdx = 0;
-  for (int row = y; row < (y + num_rows); row++) {
-    for (int col = x; col < (x + num_cols); col++) {
-      tb_change_cell(col, row, buffer[rowIdx][colIdx], fg_color, bg_color);
-      colIdx++;
-    }
-    colIdx = 0;
-    rowIdx++;
-    num_cols = buffer[rowIdx].length();
-  }
-  tb_present();
-}
+

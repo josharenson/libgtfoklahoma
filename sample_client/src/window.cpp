@@ -17,6 +17,8 @@
 
 #include <window.hpp>
 
+#include <memory>
+
 #include <spdlog/spdlog.h>
 
 using namespace gtfoklahoma;
@@ -78,3 +80,10 @@ int32_t WMObject::horizontalCenter() const {
 int32_t WMObject::verticalCenter() const {
   return y() + (height / 2);
 }
+
+void Window::startAnimation(const std::vector<std::string> &buffer) {
+  if (m_animation != nullptr) { m_animation->stop(); }
+  m_animation = std::make_unique<WindowAnimation>(*this, buffer, 256);
+}
+
+void Window::stopAnimation() { m_animation->stop(); }

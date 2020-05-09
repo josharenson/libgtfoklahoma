@@ -17,8 +17,15 @@
 
 #pragma once
 
+#include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <thread>
+#include <vector>
+
+#include <window_animation.hpp>
 
 namespace gtfoklahoma {
 
@@ -85,5 +92,11 @@ struct WMObject {
   [[nodiscard]] int32_t verticalCenter() const;
 };
 
-struct Window : public WMObject {};
+struct Window : public WMObject {
+  void startAnimation(const std::vector<std::string> &buffer);
+  void stopAnimation();
+
+private:
+  std::unique_ptr<WindowAnimation> m_animation;
+};
 }

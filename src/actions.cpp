@@ -74,6 +74,17 @@ Actions::Actions(Game &game, const char *actionJson)
       auto &model = m_actions.emplace(action["id"].GetInt(), ActionModel(m_game)).first->second;
 
       model.id = action["id"].GetInt();
+
+      if (action.HasMember("dependent_inventory_ids") && action["dependent_inventory_ids"].IsArray()) {
+        for (const auto &dependentInventoryId : action["dependent_inventory_ids"].GetArray()) {
+          auto pair = dependentInventoryId.GetObject();
+          if (pair.HasMember("id") && pair["id"].IsInt()
+              && pair.HasMember("qty") && pair["qty"].IsInt()) {
+            model.dependent_inventory_ids.emplace_back(pair["id"].GetInt(), pair["qty"].GetInt());
+          }
+        }
+      }
+
       model.display_name = action["display_name"].GetString();
       model.type = getActionType(action["type"].GetArray());
 

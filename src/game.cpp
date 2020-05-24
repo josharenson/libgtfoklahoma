@@ -158,7 +158,7 @@ void Game::removeItemFromInventory(int32_t id, int32_t quantity) {
   }
 }
 
-bool Game::hasItemInInventory(int32_t id) const {
+int32_t Game::inventoryCount(int32_t id) const {
   return m_inventory.count(id);
 }
 

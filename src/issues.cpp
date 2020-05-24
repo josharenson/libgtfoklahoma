@@ -176,7 +176,7 @@ bool Issues::canServeIssue(int32_t id) const {
   // Issue can't be served if its dependent items aren't in the inventory
   if (!issue.dependent_inventory.empty()) {
     for (const auto &item_id : issue.dependent_inventory) {
-      if (!m_game.hasItemInInventory(item_id)) { return false; }
+      if (!m_game.inventoryCount(item_id)) { return false; }
     }
   }
 

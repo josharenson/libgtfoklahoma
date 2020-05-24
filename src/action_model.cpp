@@ -28,6 +28,16 @@ ActionModel::ActionModel(Game &game)
 : m_successful(false)
 , m_game(game) {}
 
+bool ActionModel::isVisible() {
+  for (const auto &dependent_inventory_id : dependent_inventory_ids) {
+    if (!(m_game.inventoryCount(dependent_inventory_id.first) >=
+        dependent_inventory_id.second)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool ActionModel::failed() const {
   return !m_successful;
 }

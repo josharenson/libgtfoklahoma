@@ -64,7 +64,7 @@ public:
   // Inventory management
   void addItemToInventory(int32_t id, int32_t quantity=1);
   void removeItemFromInventory(int32_t id, int32_t quantity=1);
-  [[nodiscard]] bool hasItemInInventory(int32_t id) const;
+  [[nodiscard]] int32_t inventoryCount(int32_t id) const;
   [[nodiscard]] std::vector<std::reference_wrapper<ItemModel>> getInventory();
 
   // Issue management

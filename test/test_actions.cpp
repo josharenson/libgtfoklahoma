@@ -263,3 +263,28 @@ TEST_CASE("Actions - Success/Failure") {
     REQUIRE(action.failed());
   }
 }
+
+TEST_CASE("Actions - inventory dependent") {
+  const char *actionsJson = R"(
+  [
+    {
+      "display_name": "",
+      "id": 0,
+      "dependent_inventory_ids":[
+        {"id": 0, "qty": 1}
+      ],
+      "type": ["INVENTORY_DEPENDENT"]
+    }
+  ]
+  )";
+  Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, validItemJson);
+
+  SECTION("ActionModel::isVisible - negative case") {
+    REQUIRE_FALSE(game.getActions().getAction(0).isVisible());
+  }
+
+  SECTION("ActionModel::isVisible - positive case") {
+    game.addItemToInventory(0, 1);
+    REQUIRE(game.getActions().getAction(0).isVisible());
+  }
+}

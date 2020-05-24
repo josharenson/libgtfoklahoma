@@ -29,17 +29,17 @@ TEST_CASE("Game", "[unit]") {
   Game game("");
 
   SECTION("Game::addItemToInventory") {
-    REQUIRE_FALSE(game.hasItemInInventory(0));
+    REQUIRE_FALSE(game.inventoryCount(0));
     game.addItemToInventory(0);
-    REQUIRE(game.hasItemInInventory(0));
+    REQUIRE(game.inventoryCount(0));
   }
 
   SECTION("Game::removeItemFromInventory") {
     game.addItemToInventory(0);
-    REQUIRE(game.hasItemInInventory(0));
+    REQUIRE(game.inventoryCount(0));
 
     game.removeItemFromInventory(0);
-    REQUIRE_FALSE(game.hasItemInInventory(0));
+    REQUIRE_FALSE(game.inventoryCount(0));
   }
 
   SECTION("Game::getInventory - default quantity") {

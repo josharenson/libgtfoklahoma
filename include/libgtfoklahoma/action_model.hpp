@@ -34,11 +34,20 @@ struct ActionModel {
   explicit ActionModel(Game &game);
 
   // Actions can be more than one type at a time so use a mask
-  enum ActionType { NONE = 0, STAT_CHANGE = 1u << 0u, STORE = 1u << 1u };
+  enum ActionType { NONE = 0,
+                    STAT_CHANGE = 1u << 0u,
+                    STORE = 1u << 1u,
+                    INVENTORY_DEPENDENT = 1u << 2u
+  };
 
   int32_t id{-1};
+  std::vector<std::pair<int32_t, int32_t>> dependent_inventory_ids;
   std::vector<int32_t> ending_id_hints;
   std::string display_name;
+
+  // If action is INVENTORY_CHANGE type
+  // Actions aren't visible if the player doesn't meet the inventory requirements
+  bool isVisible();
 
   // If action is STAT_CHANGE type
   float success_chance{0};
@@ -64,6 +73,7 @@ struct ActionModel {
 
   // Helpers for erebody
   uint32_t type{0};
+  [[nodiscard]] bool isInventoryDependentType() const { return type & ActionType::INVENTORY_DEPENDENT; }
   [[nodiscard]] bool isNoneType() const { return type & ActionType::NONE; }
   [[nodiscard]] bool isStatChangeType() const { return type & ActionType::STAT_CHANGE; }
   [[nodiscard]] bool isStoreType() const { return type & ActionType::STORE; }

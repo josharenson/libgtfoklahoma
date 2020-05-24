@@ -273,7 +273,7 @@ TEST_CASE("Actions - inventory dependent") {
       "dependent_inventory_ids":[
         {"id": 0, "qty": 1}
       ],
-      "type": ["INVENTORY_DEPENDENT"]
+      "type": ["NONE"]
     }
   ]
   )";
@@ -286,5 +286,84 @@ TEST_CASE("Actions - inventory dependent") {
   SECTION("ActionModel::isVisible - positive case") {
     game.addItemToInventory(0, 1);
     REQUIRE(game.getActions().getAction(0).isVisible());
+  }
+}
+
+TEST_CASE("Actions - inventory deltas") {
+  const char *actionsJson = R"(
+  [
+    {
+      "display_name": "",
+      "id": 0,
+      "inventory_delta_regardless": [
+        {"id": 0, "qty": -1}
+      ],
+      "inventory_delta_on_success": [
+        {"id": 1, "qty": 1}
+      ],
+      "success_chance": 1.0,
+      "type": ["NONE"]
+    },
+    {
+      "display_name": "",
+      "id": 1,
+      "inventory_delta_regardless": [
+        {"id": 0, "qty": -1}
+      ],
+      "inventory_delta_on_failure": [
+        {"id": 2, "qty": 2}
+      ],
+      "success_chance": 0.0,
+      "type": ["NONE"]
+    }
+  ]
+  )";
+
+  const char *itemsJson = R"(
+  [
+    {
+      "id": 0,
+      "category": "MISC",
+      "cost": 1,
+      "display_name": "",
+      "image_url": "",
+      "stat_changes": [{"money_remaining": -1}]
+    },
+    {
+      "id": 1,
+      "category": "MISC",
+      "cost": 1,
+      "display_name": "",
+      "image_url": "",
+      "stat_changes": [{"money_remaining": -1}]
+    },
+    {
+      "id": 2,
+      "category": "MISC",
+      "cost": 1,
+      "display_name": "",
+      "image_url": "",
+      "stat_changes": [{"money_remaining": -1}]
+    }
+  ]
+  )";
+
+  Game game("", actionsJson, validEndingJson, validEventJson, validIssueJson, itemsJson);
+
+  SECTION("Actions - inventory delta regardless") {
+    game.addItemToInventory(0, 1);
+    REQUIRE(game.inventoryCount(0) == 1);
+    game.getActions().handleAction(0, nullptr);
+    REQUIRE(game.inventoryCount(0) == 0);
+  }
+
+  SECTION("Actions - inventory delta on success") {
+    game.getActions().handleAction(0, nullptr);
+    REQUIRE(game.inventoryCount(1) == 1);
+  }
+
+  SECTION("Actions - inventory delta on failure") {
+    game.getActions().handleAction(1, nullptr);
+    REQUIRE(game.inventoryCount(2) == 2);
   }
 }

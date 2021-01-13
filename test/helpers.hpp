@@ -1,6 +1,6 @@
 /*
  * This file is part of the libgtfoklahoma distribution (https://github.com/arenson/libgtfoklahoma)
- * Copyright (c) 2020 Josh Arenson.
+ * Copyright (c) 2020 - 2021 Josh Arenson.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
  */
 
 #pragma once
+
+#include <condition_variable>
+#include <mutex>
 
 #include <libgtfoklahoma/event_observer.hpp>
 
